@@ -1105,15 +1105,14 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
 <div id="login-screen" style="
   display:flex; position:fixed; inset:0; z-index:999;
   background:var(--bg); align-items:center; justify-content:center;
-  flex-direction:column; gap:0;
+  flex-direction:column;
 ">
   <div style="
     background:var(--surface); border:1px solid var(--border2);
     border-radius:20px; padding:40px 44px; width:380px; max-width:92vw;
     box-shadow:0 40px 80px rgba(0,0,0,.5);
-    display:flex; flex-direction:column; align-items:center; gap:0;
+    display:flex; flex-direction:column; align-items:center;
   ">
-    <!-- Logo -->
     <svg width="44" height="44" viewBox="0 0 54 54" fill="none" style="margin-bottom:18px">
       <defs>
         <linearGradient id="lgl1" x1="0" y1="0" x2="54" y2="54" gradientUnits="userSpaceOnUse">
@@ -1128,11 +1127,8 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
       <line x1="19" y1="17" x2="19" y2="30" stroke="url(#lgl1)" stroke-width="2.8" stroke-linecap="round"/>
       <path d="M33,22 Q33,18 38,18 Q43,18 43,22 Q43,26 38,27 Q33,28 33,32 Q33,36 38,36 Q43,36 43,32" stroke="url(#lgl1)" stroke-width="2.8" stroke-linecap="round" fill="none"/>
     </svg>
-
     <div style="font-family:var(--display);font-size:1.6rem;font-style:italic;color:var(--text);margin-bottom:6px">Journal de bord</div>
     <div style="font-family:var(--mono);font-size:.68rem;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:32px">Connexion requise</div>
-
-    <!-- Google button -->
     <button onclick="loginWithGoogle()" style="
       width:100%; padding:13px 20px;
       background:var(--surface2); border:1px solid var(--border2);
@@ -1141,7 +1137,6 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
       font-family:var(--body); font-size:.92rem; font-weight:500; color:var(--text);
     " onmouseover="this.style.borderColor='var(--indigo)';this.style.background='var(--indigo-d)'"
        onmouseout="this.style.borderColor='var(--border2)';this.style.background='var(--surface2)'">
-      <!-- Google SVG icon -->
       <svg width="18" height="18" viewBox="0 0 48 48">
         <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
         <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
@@ -1150,14 +1145,12 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
       </svg>
       Continuer avec Google
     </button>
-
     <div id="login-error" style="
       display:none; margin-top:14px; padding:10px 14px;
       background:var(--red-d); border:1px solid var(--rose);
       border-radius:8px; font-family:var(--mono); font-size:.7rem;
       color:var(--rose); text-align:center; width:100%;
     "></div>
-
   </div>
 </div>
 
@@ -1651,8 +1644,8 @@ function loginWithGoogle(){
 
 function logout(){
   auth.signOut().then(()=>{
-    document.getElementById('app-shell').style.display='none';
     document.getElementById('login-screen').style.display='flex';
+    document.getElementById('app-shell').style.display='none';
   });
 }
 
@@ -1660,30 +1653,21 @@ auth.onAuthStateChanged(user=>{
   if(user){
     currentUser=user;
     DOC_REF=db.collection('worklog').doc(user.uid);
-    // Update user display in sidebar
     const nameEl=document.getElementById('user-name');
-    const avatarEl=document.getElementById('user-avatar');
-    if(nameEl) nameEl.textContent=user.displayName||user.email;
     const avatarEl=document.getElementById('user-avatar');
     const fallbackEl=document.getElementById('avatar-fallback');
     const firstName=(user.displayName||user.email).split(' ')[0];
+    if(nameEl) nameEl.textContent=user.displayName||user.email;
     if(avatarEl){
-      if(user.photoURL){
-        // Use a proxy to avoid CORS issues on GitHub Pages
-        avatarEl.src=user.photoURL;
-        avatarEl.style.display='block';
-      } else {
-        avatarEl.style.display='none';
-        if(fallbackEl){ fallbackEl.style.display='flex'; fallbackEl.textContent=firstName[0].toUpperCase(); }
-      }
+      if(user.photoURL){ avatarEl.src=user.photoURL; avatarEl.style.display='block'; }
+      else { avatarEl.style.display='none'; if(fallbackEl){ fallbackEl.style.display='flex'; fallbackEl.textContent=firstName[0].toUpperCase(); } }
     }
-    // Update sidebar logo name with first name only
     const sidebarName=document.getElementById('sidebar-user-name');
     if(sidebarName) sidebarName.textContent=firstName;
-    // Hide login, show app
+    // Cacher la modal
     document.getElementById('login-screen').style.display='none';
     document.getElementById('app-shell').style.display='flex';
-    // Load data
+    // Charger les données
     state=JSON.parse(localStorage.getItem('worklog_state_'+user.uid)||'null')||{goal:8,log:[],timers:[],events:[],todos:[],docs:[],notes:{},subjectGoals:[]};
     if(!state.events)state.events=[];
     if(!state.todos)state.todos=[];
