@@ -1616,6 +1616,9 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
     <button class="bottom-nav-btn" id="bnav-stats" onclick="switchTab('stats',this);updateBottomNav('stats')">
       <span class="bni">📊</span>Stats
     </button>
+    <button class="bottom-nav-btn" onclick="logout()" style="color:var(--rose)">
+      <span class="bni">⏻</span>Quitter
+    </button>
   </nav>
 
 </div><!-- /app-shell -->
@@ -2319,14 +2322,18 @@ function tickTimer(id){
   else t.elapsed++;
   if(settings.autoLog && t.elapsed>0&&t.elapsed%600===0&&t.elapsed<t.duration){
     state.log.unshift({date:localDate(),seconds:600,pauseSeconds:0,note:'Auto-log : '+t.name,subject:t.matiere||''});
+    if(!t.autoLoggedSecs) t.autoLoggedSecs=0;
+    t.autoLoggedSecs+=600;
     save();renderLog();updateGoalProgress();
     showToast('⏱ +10min — '+t.name);
   }
   if(t.elapsed>=t.duration){
     t.elapsed=t.duration;t.running=false;t.done=true;
     clearInterval(timerIntervals[id]);delete timerIntervals[id];
-    const al=Math.floor(t.duration/600)*600,rem=t.duration-al;
-    if(rem>0) state.log.unshift({date:localDate(),seconds:rem,pauseSeconds:0,note:'Fin : '+t.name,subject:t.matiere||''});
+    const alreadyLogged = t.autoLoggedSecs || 0;
+    const remaining = t.duration - alreadyLogged;
+    if(remaining>0) state.log.unshift({date:localDate(),seconds:remaining,pauseSeconds:0,note:'Fin : '+t.name,subject:t.matiere||''});
+    t.autoLoggedSecs=0;
     save();renderTimers();renderLog();updateGoalProgress();
     playAlarm();showToast('🔔 Terminé : '+t.name);
   }else{saveLocal();renderTimers();}
@@ -2338,10 +2345,12 @@ function stopAndLogTimer(id){
     t.running=false;t.startedAt=null;clearInterval(timerIntervals[id]);delete timerIntervals[id];
   }
   if(t.elapsed<10){showToast('⚠ Trop court','red');return;}
-  const al=Math.floor(t.elapsed/600)*600,rem=t.elapsed-al;
-  if(rem>0) state.log.unshift({date:localDate(),seconds:rem,pauseSeconds:0,note:'Stop : '+t.name,subject:t.matiere||''});
+  // Enregistrer tout ce qui n'a pas encore été auto-logué
+  const alreadyLogged = t.autoLoggedSecs || 0;
+  const remaining = t.elapsed - alreadyLogged;
+  if(remaining > 0) state.log.unshift({date:localDate(),seconds:remaining,pauseSeconds:0,note:'Stop : '+t.name,subject:t.matiere||''});
   const h=Math.floor(t.elapsed/3600),m=Math.floor((t.elapsed%3600)/60);
-  t.elapsed=0;t.running=false;t.done=false;
+  t.elapsed=0; t.running=false; t.done=false; t.autoLoggedSecs=0;
   save();renderTimers();renderLog();updateGoalProgress();
   showToast('✓ '+(h>0?h+'h ':'')+m+'min — '+t.name);
 }
@@ -2356,8 +2365,9 @@ function addTimeToTimer(id,secs){
 function deleteTimer(id){
   const t=state.timers.find(x=>x.id===id);if(!t)return;
   if(t.elapsed>=10){
-    const al=Math.floor(t.elapsed/600)*600,rem=t.elapsed-al;
-    if(rem>0) state.log.unshift({date:localDate(),seconds:rem,pauseSeconds:0,note:t.name,subject:t.matiere||''});
+    const alreadyLogged = t.autoLoggedSecs || 0;
+    const remaining = t.elapsed - alreadyLogged;
+    if(remaining>0) state.log.unshift({date:localDate(),seconds:remaining,pauseSeconds:0,note:t.name,subject:t.matiere||''});
     renderLog();updateGoalProgress();
   }
   clearInterval(timerIntervals[id]);delete timerIntervals[id];
@@ -2865,8 +2875,49 @@ function showToast(msg,type){
 }
 
 /* ══════════════════════════════════════════════════
-   KEYBOARD SHORTCUTS
+   PAGE VISIBILITY — Fix mobile timer pause
 ══════════════════════════════════════════════════ */
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState === 'visible'){
+    // Recalculer le temps écoulé réel pour la session
+    if(sessionRunning && sessionStart){
+      const newElapsed = Math.floor((Date.now() - sessionStart) / 1000);
+      // Auto-log les tranches de 10min manquées
+      if(settings.autoLog){
+        const oldTranches = Math.floor(sessionElapsed / 600);
+        const newTranches = Math.floor(newElapsed / 600);
+        const missed = newTranches - oldTranches;
+        if(missed > 0){
+          const subject = document.getElementById('session-subject').value.trim();
+          const note = document.getElementById('session-note').value.trim();
+          for(let i = 0; i < missed; i++){
+            state.log.unshift({date:localDate(), seconds:600, pauseSeconds:0, note:'Auto-log'+(note?' — '+note:''), subject});
+          }
+          saveLocal(); renderLog(); updateGoalProgress();
+          showToast('⏱ +'+missed*10+'min auto-enregistrées (rattrapage)');
+        }
+      }
+      sessionElapsed = newElapsed;
+      document.getElementById('session-display').textContent = fmtTime(sessionElapsed);
+      updateGoalProgress(); renderRecap();
+    }
+    // Recalculer les minuteurs
+    state.timers.forEach(t => {
+      if(t.running && t.startedAt){
+        const real = Math.floor((Date.now() - t.startedAt) / 1000);
+        t.elapsed = Math.min(t.duration, real);
+        if(t.elapsed >= t.duration){
+          t.done = true; t.running = false; t.startedAt = null;
+          clearInterval(timerIntervals[t.id]); delete timerIntervals[t.id];
+          playAlarm(); showToast('🔔 Minuteur terminé : ' + t.name);
+        }
+      }
+    });
+    renderTimers();
+  }
+});
+
+
 document.addEventListener('keydown',e=>{
   const tag=(e.target.tagName||'').toLowerCase();
   if(tag==='input'||tag==='textarea'||tag==='select') return;
