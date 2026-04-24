@@ -64,7 +64,6 @@ body {
   font-family: var(--body);
   font-size: 14px;
   line-height: 1.6;
-  display: flex;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
 }
@@ -74,7 +73,7 @@ body {
 ═══════════════════════════════════════ */
 .sidebar {
   width: var(--sw);
-  min-height: 100vh;
+  height: 100vh;
   background: var(--sidebar);
   border-right: 1px solid var(--border);
   display: flex;
@@ -195,7 +194,7 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  min-height: 100vh;
+  height: 100vh;
 }
 
 /* ─── Topbar ─── */
@@ -1056,7 +1055,7 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
 </div>
 
 <!-- ══ APP (caché jusqu'à connexion) ══════════ -->
-<div id="app-shell" style="display:none;width:100%;flex-direction:row">
+<div id="app-shell" style="display:none;width:100vw;height:100vh;flex-direction:row;overflow:hidden">
 
 <aside class="sidebar">
   <!-- Logo -->
