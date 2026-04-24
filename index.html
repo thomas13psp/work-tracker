@@ -1075,7 +1075,7 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
       <path d="M33,22 Q33,18 38,18 Q43,18 43,22 Q43,26 38,27 Q33,28 33,32 Q33,36 38,36 Q43,36 43,32" stroke="url(#lg1)" stroke-width="2.8" stroke-linecap="round" fill="none"/>
     </svg>
     <div>
-      <div class="logo-name">Thomas</div>
+      <div class="logo-name" id="sidebar-user-name">—</div>
       <div class="logo-sub">Journal de bord</div>
     </div>
   </div>
@@ -1551,6 +1551,9 @@ auth.onAuthStateChanged(user=>{
     const avatarEl=document.getElementById('user-avatar');
     if(nameEl) nameEl.textContent=user.displayName||user.email;
     if(avatarEl && user.photoURL) avatarEl.src=user.photoURL;
+    // Update sidebar logo name with first name only
+    const sidebarName=document.getElementById('sidebar-user-name');
+    if(sidebarName) sidebarName.textContent=(user.displayName||user.email).split(' ')[0];
     // Hide login, show app
     document.getElementById('login-screen').style.display='none';
     document.getElementById('app-shell').style.display='flex';
