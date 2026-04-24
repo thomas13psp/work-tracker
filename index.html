@@ -932,6 +932,7 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 </head>
 <body>
 
@@ -991,7 +992,72 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
 
 
 
-<!-- ══ APP ═════════════════════════════════════ -->
+<!-- ══ LOGIN SCREEN ═══════════════════════════ -->
+<div id="login-screen" style="
+  display:flex; position:fixed; inset:0; z-index:999;
+  background:var(--bg); align-items:center; justify-content:center;
+  flex-direction:column; gap:0;
+">
+  <div style="
+    background:var(--surface); border:1px solid var(--border2);
+    border-radius:20px; padding:40px 44px; width:380px; max-width:92vw;
+    box-shadow:0 40px 80px rgba(0,0,0,.5);
+    display:flex; flex-direction:column; align-items:center; gap:0;
+  ">
+    <!-- Logo -->
+    <svg width="44" height="44" viewBox="0 0 54 54" fill="none" style="margin-bottom:18px">
+      <defs>
+        <linearGradient id="lgl1" x1="0" y1="0" x2="54" y2="54" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#B08040"/><stop offset="100%" stop-color="#5E9478"/>
+        </linearGradient>
+        <linearGradient id="lgl2" x1="0" y1="0" x2="54" y2="54" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#1C2030"/><stop offset="100%" stop-color="#151820"/>
+        </linearGradient>
+      </defs>
+      <polygon points="27,2 50,14.5 50,39.5 27,52 4,39.5 4,14.5" fill="url(#lgl2)" stroke="url(#lgl1)" stroke-width="1.5"/>
+      <line x1="13" y1="17" x2="25" y2="17" stroke="url(#lgl1)" stroke-width="2.8" stroke-linecap="round"/>
+      <line x1="19" y1="17" x2="19" y2="30" stroke="url(#lgl1)" stroke-width="2.8" stroke-linecap="round"/>
+      <path d="M33,22 Q33,18 38,18 Q43,18 43,22 Q43,26 38,27 Q33,28 33,32 Q33,36 38,36 Q43,36 43,32" stroke="url(#lgl1)" stroke-width="2.8" stroke-linecap="round" fill="none"/>
+    </svg>
+
+    <div style="font-family:var(--display);font-size:1.6rem;font-style:italic;color:var(--text);margin-bottom:6px">Journal de bord</div>
+    <div style="font-family:var(--mono);font-size:.68rem;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:32px">Connexion requise</div>
+
+    <!-- Google button -->
+    <button onclick="loginWithGoogle()" style="
+      width:100%; padding:13px 20px;
+      background:var(--surface2); border:1px solid var(--border2);
+      border-radius:10px; cursor:pointer; transition:all .2s;
+      display:flex; align-items:center; justify-content:center; gap:12px;
+      font-family:var(--body); font-size:.92rem; font-weight:500; color:var(--text);
+    " onmouseover="this.style.borderColor='var(--indigo)';this.style.background='var(--indigo-d)'"
+       onmouseout="this.style.borderColor='var(--border2)';this.style.background='var(--surface2)'">
+      <!-- Google SVG icon -->
+      <svg width="18" height="18" viewBox="0 0 48 48">
+        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+      </svg>
+      Continuer avec Google
+    </button>
+
+    <div id="login-error" style="
+      display:none; margin-top:14px; padding:10px 14px;
+      background:var(--red-d); border:1px solid var(--rose);
+      border-radius:8px; font-family:var(--mono); font-size:.7rem;
+      color:var(--rose); text-align:center; width:100%;
+    "></div>
+
+    <div style="font-family:var(--mono);font-size:.6rem;color:var(--text3);margin-top:24px;text-align:center;line-height:1.6">
+      Chaque compte a ses propres données.<br>Tes infos ne sont pas partagées.
+    </div>
+  </div>
+</div>
+
+<!-- ══ APP (caché jusqu'à connexion) ══════════ -->
+<div id="app-shell" style="display:none;width:100%;flex-direction:row">
+
 <aside class="sidebar">
   <!-- Logo -->
   <div class="sidebar-head">
@@ -1037,6 +1103,13 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
   <!-- Footer -->
   <div class="sidebar-foot">
     <div id="sync-status"><span class="sync-dot"></span> Connexion...</div>
+
+    <!-- User info -->
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--border);margin-top:6px">
+      <img id="user-avatar" src="" width="26" height="26" style="border-radius:50%;object-fit:cover;background:var(--surface3)" onerror="this.style.display='none'">
+      <span id="user-name" style="font-family:var(--mono);font-size:.62rem;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+      <button onclick="logout()" title="Déconnexion" style="background:none;border:1px solid var(--border);border-radius:5px;color:var(--text3);cursor:pointer;font-size:.7rem;padding:3px 7px;transition:all .15s" onmouseover="this.style.color='var(--rose)';this.style.borderColor='var(--rose)'" onmouseout="this.style.color='var(--text3)';this.style.borderColor='var(--border)'">⏻</button>
+    </div>
 
     <div class="sidebar-clock">
       <span id="current-time">--:--:--</span>
@@ -1439,6 +1512,7 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
   </div><!-- /main-scroll -->
 </div><!-- /main-wrap -->
 
+</div><!-- /app-shell -->
 <div id="toast"></div>
 
 <script>
@@ -1448,7 +1522,54 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
 const firebaseConfig={apiKey:"AIzaSyBcfsO77WBlZK5WKIAnfutphTXJbVLHsqA",authDomain:"worklog-thomas.firebaseapp.com",projectId:"worklog-thomas",storageBucket:"worklog-thomas.firebasestorage.app",messagingSenderId:"778800014971",appId:"1:778800014971:web:2419e8e3c92074f098a4de"};
 firebase.initializeApp(firebaseConfig);
 const db=firebase.firestore();
-const DOC_REF=db.collection('worklog').doc('thomas-surjous');
+const auth=firebase.auth();
+let currentUser=null;
+let DOC_REF=null;
+
+/* ══ AUTH ══════════════════════════════════════════ */
+function loginWithGoogle(){
+  const provider=new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider).catch(err=>{
+    const errEl=document.getElementById('login-error');
+    errEl.style.display='block';
+    errEl.textContent='Erreur : '+err.message;
+  });
+}
+
+function logout(){
+  auth.signOut().then(()=>{
+    document.getElementById('app-shell').style.display='none';
+    document.getElementById('login-screen').style.display='flex';
+  });
+}
+
+auth.onAuthStateChanged(user=>{
+  if(user){
+    currentUser=user;
+    DOC_REF=db.collection('worklog').doc(user.uid);
+    // Update user display in sidebar
+    const nameEl=document.getElementById('user-name');
+    const avatarEl=document.getElementById('user-avatar');
+    if(nameEl) nameEl.textContent=user.displayName||user.email;
+    if(avatarEl && user.photoURL) avatarEl.src=user.photoURL;
+    // Hide login, show app
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app-shell').style.display='flex';
+    // Load data
+    state=JSON.parse(localStorage.getItem('worklog_state_'+user.uid)||'null')||{goal:8,log:[],timers:[],events:[],todos:[],docs:[],notes:{},subjectGoals:[]};
+    if(!state.events)state.events=[];
+    if(!state.todos)state.todos=[];
+    if(!state.docs)state.docs=[];
+    if(!state.notes)state.notes={};
+    if(!state.subjectGoals)state.subjectGoals=[];
+    if(!state.dailyGoals)state.dailyGoals=Array(7).fill(null);
+    loadFromFirestore();
+  } else {
+    currentUser=null; DOC_REF=null;
+    document.getElementById('login-screen').style.display='flex';
+    document.getElementById('app-shell').style.display='none';
+  }
+});
 
 function setSyncStatus(s,label){
   const el=document.getElementById('sync-status');
@@ -1457,23 +1578,34 @@ function setSyncStatus(s,label){
   el.childNodes[1].textContent=' '+label;
 }
 let saveTO=null;
-function saveLocal(){localStorage.setItem('worklog_state',JSON.stringify(state));}
+function saveLocal(){
+  if(currentUser) localStorage.setItem('worklog_state_'+currentUser.uid,JSON.stringify(state));
+}
 function save(){
-  localStorage.setItem('worklog_state',JSON.stringify(state));
+  if(currentUser) localStorage.setItem('worklog_state_'+currentUser.uid,JSON.stringify(state));
+  if(!DOC_REF){return;}
   setSyncStatus('syncing','Synchronisation...');
   clearTimeout(saveTO);
   saveTO=setTimeout(()=>{
-    DOC_REF.set({...state,secret:"Thomas26!Surjous"})
+    DOC_REF.set(state)
       .then(()=>setSyncStatus('synced','Synchronisé ✓'))
       .catch(()=>setSyncStatus('error','Hors ligne'));
   },800);
 }
 async function loadFromFirestore(){
+  if(!DOC_REF){return;}
   setSyncStatus('syncing','Chargement...');
   try{
     const doc=await DOC_REF.get();
-    if(doc.exists){state={...state,...doc.data()};localStorage.setItem('worklog_state',JSON.stringify(state));setSyncStatus('synced','Synchronisé ✓');}
-    else{await DOC_REF.set({...state,secret:"Thomas26!Surjous"});setSyncStatus('synced','Prêt ✓');}
+    if(doc.exists){
+      const data=doc.data();
+      state={...state,...data};
+      if(currentUser) localStorage.setItem('worklog_state_'+currentUser.uid,JSON.stringify(state));
+      setSyncStatus('synced','Synchronisé ✓');
+    } else {
+      await DOC_REF.set(state);
+      setSyncStatus('synced','Prêt ✓');
+    }
   }catch(e){setSyncStatus('error','Hors ligne — données locales');}
   if(!state.events)state.events=[];
   if(!state.todos)state.todos=[];
@@ -2630,17 +2762,18 @@ document.addEventListener('keydown',e=>{
    AUTO SAVE
 ══════════════════════════════════════════════════ */
 setInterval(()=>{
+  if(!DOC_REF) return;
   const ha=sessionRunning||pauseRunning||state.timers.some(t=>t.running);
   if(ha){
-    localStorage.setItem('worklog_state',JSON.stringify(state));
-    DOC_REF.set({...state,secret:"Thomas26!Surjous"}).then(()=>setSyncStatus('synced','Synchronisé ✓')).catch(()=>setSyncStatus('error','Hors ligne'));
+    saveLocal();
+    DOC_REF.set(state).then(()=>setSyncStatus('synced','Synchronisé ✓')).catch(()=>setSyncStatus('error','Hors ligne'));
   }
 },20*60*1000);
 
 /* ══════════════════════════════════════════════════
    INIT
 ══════════════════════════════════════════════════ */
-loadFromFirestore();
+// Auth state change handles everything — see auth.onAuthStateChanged above
 </script>
 </body>
 </html>
