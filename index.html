@@ -1036,35 +1036,36 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
 .file-drop-zone {
   border: 2px dashed var(--border2);
   border-radius: var(--r-lg);
-  padding: 40px 20px;
+  padding: 48px 20px;
   text-align: center;
-  transition: all .2s;
+  transition: all .25s;
   cursor: pointer;
   background: var(--surface2);
 }
 .file-drop-zone:hover, .file-drop-zone.dragover {
   border-color: var(--indigo);
   background: var(--indigo-d);
+  transform: scale(1.005);
 }
-.file-drop-icon { font-size: 2.5rem; margin-bottom: 10px; }
-.file-drop-text { font-family: var(--mono); font-size: .75rem; color: var(--text2); }
-.file-drop-sub  { font-family: var(--mono); font-size: .65rem; color: var(--text3); margin-top: 5px; }
+.file-drop-icon { font-size: 3rem; margin-bottom: 12px; display: block; }
+.file-drop-text { font-family: var(--body); font-size: .92rem; color: var(--text); font-weight: 500; }
+.file-drop-sub  { font-family: var(--mono); font-size: .65rem; color: var(--text3); margin-top: 6px; }
 
 .file-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 14px;
+  padding: 14px 16px;
   background: var(--surface2);
   border: 1px solid var(--border);
   border-radius: var(--r);
-  transition: border-color .2s;
+  transition: border-color .2s, background .2s;
   margin-bottom: 8px;
 }
-.file-item:hover { border-color: var(--border2); }
-.file-icon { font-size: 1.4rem; flex-shrink: 0; }
-.file-name { font-size: .88rem; font-weight: 500; color: var(--text); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.file-meta { font-family: var(--mono); font-size: .62rem; color: var(--text3); margin-top: 2px; }
+.file-item:hover { border-color: var(--border2); background: var(--surface3); }
+.file-icon { font-size: 1.8rem; flex-shrink: 0; width: 40px; text-align: center; }
+.file-name { font-size: .9rem; font-weight: 500; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-meta { font-family: var(--mono); font-size: .62rem; color: var(--text3); margin-top: 4px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .file-progress {
   width: 100%;
   height: 3px;
@@ -1083,7 +1084,7 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
 .storage-bar-wrap {
   background: var(--surface3);
   border-radius: 100px;
-  height: 6px;
+  height: 8px;
   overflow: hidden;
   margin: 8px 0 6px;
 }
@@ -1099,7 +1100,7 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,.85);
+  background: rgba(0,0,0,.92);
   z-index: 200;
   flex-direction: column;
 }
@@ -1108,12 +1109,12 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 20px;
+  padding: 14px 20px;
   background: var(--sidebar);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
-.pdf-modal-title { font-family: var(--mono); font-size: .78rem; color: var(--text); }
+.pdf-modal-title { font-family: var(--mono); font-size: .78rem; color: var(--text); max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pdf-modal iframe { flex: 1; border: none; background: white; }
 
 /* --- Hist calendrier --- */
@@ -1778,53 +1779,69 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
 
     <!-- == FICHIERS ============================== -->
     <div class="tab-panel" id="tab-fichiers">
-      <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="grid">
 
-        <!-- Upload zone -->
-        <div class="card sage">
-          <div class="card-title">📤 Uploader un fichier</div>
-          <div class="file-drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()"
-            ondragover="event.preventDefault();this.classList.add('dragover')"
-            ondragleave="this.classList.remove('dragover')"
-            ondrop="handleDrop(event)">
-            <div class="file-drop-icon">📂</div>
-            <div class="file-drop-text">Glisse tes fichiers ici ou clique pour sélectionner</div>
-            <div class="file-drop-sub">PDF, Images, Word, Excel — max 50MB par fichier</div>
+        <!-- Upload zone + Storage col gauche -->
+        <div style="display:flex;flex-direction:column;gap:16px" class="col-1">
+
+          <!-- Upload -->
+          <div class="card sage">
+            <div class="card-title">📤 Uploader</div>
+            <div class="file-drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()"
+              ondragover="event.preventDefault();this.classList.add('dragover')"
+              ondragleave="this.classList.remove('dragover')"
+              ondrop="handleDrop(event)">
+              <span class="file-drop-icon">📂</span>
+              <div class="file-drop-text">Glisse ici ou clique</div>
+              <div class="file-drop-sub">PDF, Images, Word, Excel · max 50MB</div>
+            </div>
+            <input type="file" id="file-input" style="display:none" multiple accept=".pdf,.png,.jpg,.jpeg,.gif,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" onchange="handleFileSelect(event)">
+            <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">
+              <input class="input-field" id="upload-matiere" placeholder="Matière (optionnel)">
+              <input class="input-field" id="upload-desc" placeholder="Description (optionnel)">
+            </div>
+            <div id="upload-list" style="margin-top:10px;display:flex;flex-direction:column;gap:6px"></div>
           </div>
-          <input type="file" id="file-input" style="display:none" multiple accept=".pdf,.png,.jpg,.jpeg,.gif,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" onchange="handleFileSelect(event)">
-          <div style="display:flex;gap:8px;margin-top:12px;align-items:center">
-            <input class="input-field" id="upload-matiere" placeholder="Matière (optionnel)" style="flex:1">
-            <input class="input-field" id="upload-desc" placeholder="Description (optionnel)" style="flex:1.5">
+
+          <!-- Storage -->
+          <div class="card amber">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <div class="card-title" style="margin:0">💾 Stockage</div>
+              <span id="storage-text" style="font-family:var(--mono);font-size:.72rem;color:var(--text2)">—</span>
+            </div>
+            <div class="storage-bar-wrap"><div class="storage-bar" id="storage-bar" style="width:0%"></div></div>
+            <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:.6rem;color:var(--text3);margin-top:4px">
+              <span>0 MB utilisés</span>
+              <span>2 500 MB disponibles</span>
+            </div>
           </div>
-          <div id="upload-list" style="margin-top:12px;display:flex;flex-direction:column;gap:6px"></div>
+
+          <!-- Stats fichiers -->
+          <div class="card">
+            <div class="card-title">📊 Résumé</div>
+            <div id="files-stats" style="display:flex;flex-direction:column;gap:8px">
+              <div class="empty-log">Aucun fichier</div>
+            </div>
+          </div>
+
         </div>
 
-        <!-- Storage usage -->
-        <div class="card amber">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-            <div class="card-title" style="margin:0">Espace utilisé</div>
-            <span id="storage-text" style="font-family:var(--mono);font-size:.72rem;color:var(--text2)">—</span>
-          </div>
-          <div class="storage-bar-wrap"><div class="storage-bar" id="storage-bar" style="width:0%"></div></div>
-          <div style="font-family:var(--mono);font-size:.62rem;color:var(--text3)">Quota : 2.5 GB (formule gratuite partagée)</div>
-        </div>
-
-        <!-- Fichiers list -->
-        <div class="card">
+        <!-- Fichiers list col droite -->
+        <div class="card col-2">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-            <div class="card-title" style="margin:0">📄 Mes fichiers</div>
-            <div style="display:flex;gap:8px;align-items:center">
-              <select class="input-field" id="file-filter-matiere" style="width:160px;font-size:.78rem" onchange="renderFiles()">
+            <div class="card-title" style="margin:0">📄 Mes fichiers <span id="files-count" style="color:var(--text3);font-size:.6rem;margin-left:4px"></span></div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <select class="input-field" id="file-filter-matiere" style="width:150px;font-size:.78rem" onchange="renderFiles()">
                 <option value="">Toutes les matières</option>
               </select>
-              <select class="input-field" id="file-sort" style="width:130px;font-size:.78rem" onchange="renderFiles()">
+              <select class="input-field" id="file-sort" style="width:120px;font-size:.78rem" onchange="renderFiles()">
                 <option value="date">Plus récents</option>
-                <option value="name">Nom</option>
+                <option value="name">A-Z</option>
                 <option value="size">Taille</option>
               </select>
             </div>
           </div>
-          <div id="file-list"><div class="empty-log">Aucun fichier — commence par uploader !</div></div>
+          <div id="file-list"><div class="empty-log" style="padding:40px 0">Aucun fichier — commence par uploader !</div></div>
         </div>
 
       </div>
@@ -2203,10 +2220,11 @@ function stopSession(){
   if(sessionRunning){sessionRunning=false;clearInterval(sessionInterval);}
   const note=document.getElementById('session-note').value.trim();
   const subject=document.getElementById('session-subject').value.trim();
-  const al=Math.floor(sessionElapsed/600)*600;
-  const rem=sessionElapsed-al;
+  // Enregistre TOUT le temps non encore auto-logué
+  const alreadyLogged = Math.floor(sessionElapsed/600)*600;
+  const rem = sessionElapsed - alreadyLogged;
   if(rem>=10) state.log.unshift({date:localDate(),seconds:rem,pauseSeconds:pauseElapsed,note,subject});
-  save();renderLog();updateGoalProgress();
+  save();renderLog();updateGoalProgress();renderRecap();renderHistCalendar();
   showToast('⏹ '+fmtHM(sessionElapsed)+' enregistrées');
   resetSession();
 }
@@ -3244,42 +3262,75 @@ function uploadFiles(files){
 function renderFiles(){
   const list = document.getElementById('file-list');
   if(!state.files || !state.files.length){
-    list.innerHTML = '<div class="empty-log">Aucun fichier — commence par uploader !</div>';
+    list.innerHTML = '<div class="empty-log" style="padding:40px 0">Aucun fichier — glisse un fichier dans la zone ci-dessus !</div>';
     return;
   }
 
   // Update matière filter options
   const filterSel = document.getElementById('file-filter-matiere');
-  const currentFilter = filterSel.value;
-  const matieres = [...new Set(state.files.map(f=>f.matiere).filter(Boolean))];
-  filterSel.innerHTML = '<option value="">Toutes les matières</option>' +
-    matieres.map(m=>`<option value="${m}" ${m===currentFilter?'selected':''}>${m}</option>`).join('');
+  if(filterSel){
+    const currentFilter = filterSel.value;
+    const matieres = [...new Set(state.files.map(f=>f.matiere).filter(Boolean))];
+    filterSel.innerHTML = '<option value="">Toutes les matières</option>' +
+      matieres.map(m=>'<option value="'+m+'" '+(m===currentFilter?'selected':'')+'>'+m+'</option>').join('');
+  }
 
   // Filter & sort
   let files = [...state.files];
+  const currentFilter = filterSel ? filterSel.value : '';
   if(currentFilter) files = files.filter(f=>f.matiere===currentFilter);
-  const sort = document.getElementById('file-sort').value;
+  const sortEl = document.getElementById('file-sort');
+  const sort = sortEl ? sortEl.value : 'date';
   if(sort==='name') files.sort((a,b)=>a.name.localeCompare(b.name));
   else if(sort==='size') files.sort((a,b)=>b.size-a.size);
   else files.sort((a,b)=>b.uploadedAt.localeCompare(a.uploadedAt));
+
+  // Update count
+  const countEl = document.getElementById('files-count');
+  if(countEl) countEl.textContent = '('+files.length+')';
+
+  // Update summary stats
+  const statsEl = document.getElementById('files-stats');
+  if(statsEl && state.files.length){
+    const byType = {};
+    state.files.forEach(f => {
+      const ext = f.name.split('.').pop().toLowerCase();
+      const type = ['pdf'].includes(ext)?'PDF':['png','jpg','jpeg','gif','webp'].includes(ext)?'Images':['doc','docx'].includes(ext)?'Word':['xls','xlsx'].includes(ext)?'Excel':'Autres';
+      byType[type] = (byType[type]||0)+1;
+    });
+    statsEl.innerHTML = Object.entries(byType).map(([type,count])=>
+      '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:.72rem">'
+      +'<span style="color:var(--text2)">'+type+'</span>'
+      +'<span style="color:var(--text)">'+count+' fichier'+(count>1?'s':'')+'</span></div>'
+    ).join('') + '<div style="display:flex;justify-content:space-between;padding:6px 0;font-family:var(--mono);font-size:.72rem;margin-top:2px">'
+      +'<span style="color:var(--text3)">Total</span>'
+      +'<span style="color:var(--amber);font-weight:600">'+state.files.length+' fichier'+(state.files.length>1?'s':'')+'</span></div>';
+  }
 
   list.innerHTML = files.map(f => {
     const date = new Date(f.uploadedAt).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'});
     const isPdf = f.name.toLowerCase().endsWith('.pdf');
     const isImg = /\.(png|jpg|jpeg|gif|webp)$/i.test(f.name);
-    return `<div class="file-item">
-      <div class="file-icon">${getFileIcon(f.name)}</div>
-      <div style="flex:1;min-width:0">
-        <div class="file-name">${f.name}</div>
-        <div class="file-meta">${f.matiere?'<span class="mb">'+f.matiere+'</span>':''} ${formatFileSize(f.size)} · ${date} ${f.desc?'· '+f.desc:''}</div>
-      </div>
-      <div style="display:flex;gap:5px;flex-shrink:0">
-        ${isPdf?`<button class="btn btn-teal" style="font-size:.7rem;padding:4px 10px" onclick="openPdf('${f.url}','${f.name.replace(/'/g,"\\'")}')">👁 Voir</button>`:''}
-        ${isImg?`<button class="btn btn-teal" style="font-size:.7rem;padding:4px 10px" onclick="openImg('${f.url}','${f.name.replace(/'/g,"\\'")}')">👁 Voir</button>`:''}
-        <a href="${f.url}" target="_blank" download="${f.name}" class="btn btn-muted" style="font-size:.7rem;padding:4px 10px">⬇</a>
-        <button class="icon-btn del" onclick="deleteFile('${f.id}','${f.path.replace(/'/g,"\\'")}')">✕</button>
-      </div>
-    </div>`;
+    const nameEsc = f.name.replace(/'/g,"\\'");
+    const pathEsc = f.path.replace(/'/g,"\\'");
+    const pdfBtn = isPdf ? '<button class="btn btn-teal" style="font-size:.75rem;padding:5px 12px" onclick="openPdf(\''+f.url+'\',\''+nameEsc+'\')">👁 Aperçu</button>' : '';
+    const imgBtn = isImg ? '<button class="btn btn-teal" style="font-size:.75rem;padding:5px 12px" onclick="window.open(\''+f.url+'\',\'_blank\')">🖼 Voir</button>' : '';
+    const mb = f.matiere ? '<span class="mb">'+f.matiere+'</span>' : '';
+    const desc = f.desc ? '<span style="color:var(--text2)">'+f.desc+'</span>' : '';
+    const color = getColor(f.matiere||'');
+
+    return '<div class="file-item" style="border-left:3px solid '+color+'">'
+      + '<div class="file-icon">'+getFileIcon(f.name)+'</div>'
+      + '<div style="flex:1;min-width:0">'
+      +   '<div class="file-name">'+f.name+'</div>'
+      +   '<div class="file-meta">'+mb+' <span>'+formatFileSize(f.size)+'</span> <span>'+date+'</span>'+desc+'</div>'
+      + '</div>'
+      + '<div style="display:flex;gap:5px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end">'
+      +   pdfBtn + imgBtn
+      +   '<a href="'+f.url+'" target="_blank" download="'+f.name+'" class="btn btn-muted" style="font-size:.75rem;padding:5px 12px">⬇</a>'
+      +   '<button class="icon-btn del" onclick="deleteFile(\''+f.id+'\',\''+pathEsc+'\')">✕</button>'
+      + '</div>'
+      + '</div>';
   }).join('');
 }
 
