@@ -10,7 +10,7 @@
    DESIGN TOKENS — Thème Chaud (défaut, doux pour les yeux)
 /* ------------------------------ */
 :root {
-  --bg:       #0F111A;
+  --bg:        #0F111A;
   --sidebar:  #0C0E16;
   --surface:  #151820;
   --surface2: #1C2030;
@@ -852,8 +852,6 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
 .toggle-switch input:checked + .toggle-track { background: var(--sage); border-color: var(--sage); }
 .toggle-switch input:checked + .toggle-track::after { left: calc(100% - 16px); background: #fff; }
 
-
-
 /* ---------------------------------------
    TOAST
 /* ------------------------------ */
@@ -876,8 +874,6 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
   max-width: 360px;
 }
 #toast.show { opacity: 1; transform: translateY(0); }
-
-
 
 /* ---------------------------------------
    FILTER PILLS
@@ -912,8 +908,6 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
 /* ------------------------------ */
 @media (max-width: 820px) {
   :root { --sw: 62px; }
-
-  /* Sidebar réduite — icônes seulement */
   .logo-name, .logo-sub, .nav-pill span:not(.ni),
   #sync-status, .foot-btns, .nav-section-label,
   #user-name { display: none; }
@@ -922,19 +916,13 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
   .sidebar-foot { padding: 10px 8px; align-items: center; }
   #current-time { font-size: .85rem; text-align: center; letter-spacing: .5px; }
   #today-date { display: none; }
-
-  /* Grilles */
   .grid, .grid-3 { grid-template-columns: 1fr; }
   .col-1, .col-2 { grid-column: 1/-1; }
   .grid-5 { grid-template-columns: repeat(2,1fr); }
   .kpi-row-outter { grid-template-columns: repeat(2,1fr) !important; }
-
-  /* Typo */
   .big-timer { font-size: 3.5rem; }
   .pom-ring-time { font-size: 2rem; }
   .goal-number { font-size: 3rem; }
-
-  /* Layout */
   .topbar { padding: 0 14px; }
   .main-scroll { padding: 16px 14px 32px; }
   .recap-bar { padding: 6px 14px; gap: 12px; font-size: .62rem; overflow-x: auto; }
@@ -945,11 +933,7 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
 /* ------------------------------ */
 @media (max-width: 480px) {
   :root { --sw: 0px; }
-
-  /* Sidebar cachée — bottom nav à la place */
   .sidebar { display: none; }
-
-  /* Bottom navigation bar */
   .bottom-nav {
     display: flex !important;
     position: fixed;
@@ -981,52 +965,28 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
   }
   .bottom-nav-btn .bni { font-size: 1.2rem; }
   .bottom-nav-btn.active { color: var(--indigo); background: var(--indigo-d); }
-
-  /* App shell sans sidebar */
   #app-shell { flex-direction: column; }
   .main-wrap { height: calc(100vh - 60px); }
-
-  /* Topbar mobile */
   .topbar { padding: 0 14px; height: 46px; }
   .topbar-title { font-size: .82rem; }
-  .recap-bar { display: none; } /* trop petit, caché sur mobile */
-
-  /* Scroll */
+  .recap-bar { display: none; }
   .main-scroll { padding: 14px 12px 24px; }
-
-  /* Grilles full width */
   .grid, .grid-3, .grid-5 { grid-template-columns: 1fr; gap: 12px; }
   .col-1, .col-2, .col-full { grid-column: 1/-1; }
   .kpi-row-outter { grid-template-columns: repeat(2,1fr) !important; gap: 10px; }
-
-  /* Cards */
   .card { padding: 16px; border-radius: 12px; }
-
-  /* Timer */
   .big-timer { font-size: 3.2rem; letter-spacing: 1px; }
   .goal-number { font-size: 2.8rem; }
   .pom-ring { width: 160px; height: 160px; }
   .pom-ring svg { width: 160px; height: 160px; }
   .pom-ring-time { font-size: 1.8rem; }
-
-  /* Boutons */
   .btn { padding: 9px 13px; font-size: .8rem; }
   .btn-row { gap: 6px; }
-
-  /* Inputs */
   .input-field { padding: 10px 11px; font-size: .875rem; }
-
-  /* Log */
   .log-list { max-height: 200px; }
-
-  /* Modal */
   .modal { padding: 20px 18px; border-radius: 14px; }
-
-  /* Stats */
   .stats-row { gap: 7px; }
   .stat-val { font-size: 1.25rem; }
-
-  /* Sound grid */
   .sound-grid { grid-template-columns: repeat(2,1fr); gap: 6px; }
   .sound-btn { padding: 10px 8px; }
   .sound-icon { font-size: 1.3rem; }
@@ -1173,7 +1133,7 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
 .section-divider { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
 .section-sub { font-family: var(--mono); font-size: .6rem; color: var(--text3); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
 
-/* Bottom nav caché par défaut (desktop/tablet) */
+/* Bottom nav caché par défaut */
 .bottom-nav { display: none; }
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
@@ -1183,9 +1143,6 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
 </head>
 <body>
 
-
-
-<!-- == MODALS ================================== -->
 <div class="modal-overlay" id="ev-modal">
   <div class="modal">
     <button class="modal-close" onclick="closeEv()">✕</button>
@@ -1237,9 +1194,6 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
   </div>
 </div>
 
-
-
-<!-- == LOGIN SCREEN =========================== -->
 <div id="login-screen" style="
   display:flex; position:fixed; inset:0; z-index:999;
   background:var(--bg); align-items:center; justify-content:center;
@@ -1292,7 +1246,6 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
   </div>
 </div>
 
-<!-- PDF Viewer Modal -->
 <div class="pdf-modal" id="pdf-modal">
   <div class="pdf-modal-header">
     <span class="pdf-modal-title" id="pdf-modal-title">Aperçu</span>
@@ -1304,11 +1257,9 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
   <iframe id="pdf-iframe" src=""></iframe>
 </div>
 
-<!-- == APP (caché jusqu'à connexion) ========== -->
 <div id="app-shell" style="display:none;width:100vw;height:100vh;flex-direction:row;overflow:hidden">
 
 <aside class="sidebar">
-  <!-- Logo -->
   <div class="sidebar-head">
     <div style="position:relative;flex-shrink:0">
       <img id="user-avatar" src="" width="36" height="36"
@@ -1322,7 +1273,6 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
     </div>
   </div>
 
-  <!-- Nav -->
   <nav class="nav-area">
     <div class="nav-section-label">Navigation</div>
     <button class="nav-pill active" id="nav-suivi"  onclick="switchTab('suivi',this)">
@@ -1340,15 +1290,11 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
     <button class="nav-pill" id="nav-fichiers" onclick="switchTab('fichiers',this)">
       <span class="ni">📁</span><span>Fichiers</span>
     </button>
-
-
   </nav>
 
-  <!-- Footer -->
   <div class="sidebar-foot">
     <div id="sync-status"><span class="sync-dot"></span> Connexion...</div>
 
-    <!-- User info -->
     <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--border);margin-top:6px">
       <span id="user-name" style="font-family:var(--mono);font-size:.62rem;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
       <button onclick="logout()" title="Déconnexion" style="background:none;border:1px solid var(--border);border-radius:5px;color:var(--text3);cursor:pointer;font-size:.7rem;padding:3px 7px;transition:all .15s" onmouseover="this.style.color='var(--rose)';this.style.borderColor='var(--rose)'" onmouseout="this.style.color='var(--text3)';this.style.borderColor='var(--border)'">⏻</button>
@@ -1366,10 +1312,8 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
   </div>
 </aside>
 
-<!-- == MAIN ================================= -->
 <div class="main-wrap">
 
-  <!-- Topbar -->
   <div class="topbar">
     <div class="topbar-title" id="topbar-title"><span>Suivi</span> — Session de travail</div>
     <div class="topbar-right">
@@ -1377,7 +1321,6 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
     </div>
   </div>
 
-  <!-- Recap bar -->
   <div class="recap-bar" id="recap-bar">
     <div class="recap-item">Aujourd'hui <span class="recap-val" id="recap-today">0h</span></div>
     <div class="recap-dot"></div>
@@ -1392,15 +1335,12 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
 
   <div class="main-scroll">
 
-    <!-- == SUIVI ============================== -->
     <div class="tab-panel active" id="tab-suivi">
       <div class="grid">
 
-        <!-- Session -->
         <div class="card sage col-1">
           <div class="card-title">Session de travail</div>
 
-          <!-- Templates rapides -->
           <div style="margin-bottom:14px">
             <div class="section-sub">Démarrage rapide</div>
             <div class="template-grid" id="templates-container"></div>
@@ -1434,7 +1374,6 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
           </div>
         </div>
 
-        <!-- Objectif -->
         <div class="card amber col-2">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
             <div class="card-title" style="margin:0">Objectif journalier</div>
@@ -1453,7 +1392,6 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
           <div class="stats-row" id="weekly-stats"></div>
         </div>
 
-        <!-- Minuteurs -->
         <div class="card teal col-full">
           <div class="card-title">Minuteurs personnalisés</div>
           <div id="timer-list"></div>
@@ -1466,7 +1404,6 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
           </div>
         </div>
 
-        <!-- Journal -->
         <div class="card col-2">
           <div class="card-title">Journal des heures</div>
           <div class="log-list" id="log-list"></div>
@@ -1477,7 +1414,6 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
           </div>
         </div>
 
-        <!-- Historique par jour -->
         <div class="card col-full">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
             <div class="card-title" style="margin:0">📅 Historique — heures travaillées</div>
@@ -1489,10 +1425,8 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
             </div>
           </div>
 
-          <!-- Grille calendrier -->
           <div id="hist-cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:14px"></div>
 
-          <!-- Détail du jour sélectionné -->
           <div id="hist-day-detail" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
               <div id="hist-day-title" style="font-family:var(--display);font-size:1rem;font-style:italic;color:var(--text)"></div>
@@ -1505,7 +1439,6 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
       </div>
     </div>
 
-    <!-- == AGENDA ============================== -->
     <div class="tab-panel" id="tab-agenda">
       <div class="grid">
         <div class="card teal col-1">
@@ -1555,11 +1488,9 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
       </div>
     </div>
 
-    <!-- == OUTILS ============================== -->
     <div class="tab-panel" id="tab-outils">
       <div class="grid">
 
-        <!-- Pomodoro -->
         <div class="card sage col-1">
           <div class="card-title">🍅 Pomodoro</div>
           <div class="pom-ring">
@@ -1579,7 +1510,9 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
             <button class="btn btn-muted" onclick="resetPomodoro()">↺ Reset</button>
             <button class="btn btn-muted" onclick="skipPomodoro()" title="Passer à la phase suivante">⏭</button>
           </div>
-          <!-- Paramètres Pomodoro -->
+          <div style="margin-top:12px; width: 100%">
+            <input class="input-field" id="pom-subject" placeholder="Matière (ex: Maths)" style="width:100%; text-align:center;">
+          </div>
           <div class="pom-settings">
             <div class="section-sub" style="margin-bottom:8px">Durées (minutes)</div>
             <div class="pom-setting-row">
@@ -1609,10 +1542,8 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
           </div>
         </div>
 
-        <!-- Sons ambiants + Notes -->
         <div style="display:flex;flex-direction:column;gap:16px">
 
-          <!-- Sons ambiants -->
           <div class="card teal">
             <div class="card-title">🎵 Sons ambiants</div>
             <div class="sound-grid">
@@ -1640,7 +1571,6 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
             </div>
           </div>
 
-          <!-- Paramètres & rappels -->
           <div class="card amber">
             <div class="card-title">⚙️ Paramètres & Rappels</div>
             <div class="toggle-row">
@@ -1684,7 +1614,6 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
 
         </div>
 
-        <!-- Notes du jour -->
         <div class="card lav col-full">
           <div class="card-title">📝 Notes du jour</div>
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
@@ -1702,7 +1631,6 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
           </div>
         </div>
 
-        <!-- Objectifs par matière -->
         <div class="card sand col-full">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
             <div class="card-title" style="margin:0">🎯 Objectifs hebdo par matière</div>
@@ -1722,7 +1650,6 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
       </div>
     </div>
 
-    <!-- == STATS ============================== -->
     <div class="tab-panel" id="tab-stats">
       <div style="display:flex;flex-direction:column;gap:16px">
 
@@ -1775,16 +1702,11 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
         </div>
 
       </div>
-    </div><!-- /tab-stats -->
-
-    <!-- == FICHIERS ============================== -->
-    <div class="tab-panel" id="tab-fichiers">
+    </div><div class="tab-panel" id="tab-fichiers">
       <div class="grid">
 
-        <!-- Upload zone + Storage col gauche -->
         <div style="display:flex;flex-direction:column;gap:16px" class="col-1">
 
-          <!-- Upload -->
           <div class="card sage">
             <div class="card-title">📤 Uploader</div>
             <div class="file-drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()"
@@ -1803,7 +1725,6 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
             <div id="upload-list" style="margin-top:10px;display:flex;flex-direction:column;gap:6px"></div>
           </div>
 
-          <!-- Storage -->
           <div class="card amber">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
               <div class="card-title" style="margin:0">💾 Stockage</div>
@@ -1816,7 +1737,6 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
             </div>
           </div>
 
-          <!-- Stats fichiers -->
           <div class="card">
             <div class="card-title">📊 Résumé</div>
             <div id="files-stats" style="display:flex;flex-direction:column;gap:8px">
@@ -1826,7 +1746,6 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
 
         </div>
 
-        <!-- Fichiers list col droite -->
         <div class="card col-2">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
             <div class="card-title" style="margin:0">📄 Mes fichiers <span id="files-count" style="color:var(--text3);font-size:.6rem;margin-left:4px"></span></div>
@@ -1845,13 +1764,7 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
         </div>
 
       </div>
-    </div><!-- /tab-fichiers -->
-
-  </div><!-- /main-scroll -->
-</div><!-- /main-wrap -->
-
-  <!-- Bottom nav (mobile only) -->
-  <nav class="bottom-nav">
+    </div></div></div><nav class="bottom-nav">
     <button class="bottom-nav-btn active" id="bnav-suivi" onclick="switchTab('suivi',this);updateBottomNav('suivi')">
       <span class="bni">⏱</span>Suivi
     </button>
@@ -1872,8 +1785,7 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
     </button>
   </nav>
 
-</div><!-- /app-shell -->
-<div id="toast"></div>
+</div><div id="toast"></div>
 
 <script>
 /* --------------------------------------------------
@@ -2287,10 +2199,10 @@ let pomState={
   type:'work', // 'work'|'short'|'long'
   elapsed:0,
   cyclesCompleted:0,
-  interval:null
+  interval:null,
+  autoLoggedSecs:0
 };
 const POM_CYCLES=4; // cycles before long break
-const CIRCUMFERENCE=2*Math.PI*88; // 553
 
 function pomDuration(){
   if(pomState.type==='work') return pomSettings.work*60;
@@ -2324,17 +2236,39 @@ function togglePomodoro(){
   }
   document.getElementById('recap-pomodoro').style.display=pomState.active?'flex':'none';
 }
+
 function tickPomodoro(){
   pomState.elapsed++;
   updatePomDisplay();
+
+  // AUTO-LOG POMODORO (toutes les 10 min)
+  if(settings.autoLog && pomState.type === 'work' && pomState.elapsed > 0 && pomState.elapsed % 600 === 0){
+    const subject = document.getElementById('pom-subject').value.trim();
+    state.log.unshift({date:localDate(), seconds:600, pauseSeconds:0, note:'Auto-log 🍅', subject});
+    
+    if(!pomState.autoLoggedSecs) pomState.autoLoggedSecs = 0;
+    pomState.autoLoggedSecs += 600;
+    
+    save(); renderLog(); updateGoalProgress(); renderRecap(); renderHistCalendar();
+    showToast('⏱ +10min auto-enregistrées');
+  }
+
   if(pomState.elapsed>=pomDuration()){
     playAlarm();
     pomState.active=false;
     clearInterval(pomState.interval);
+    
     if(pomState.type==='work'){
-      // Log the pomodoro work session
-      const sub=document.getElementById('session-subject').value.trim()||'Pomodoro';
-      state.log.unshift({date:localDate(),seconds:pomSettings.work*60,pauseSeconds:0,note:'🍅 Pomodoro',subject:sub});
+      // Loguer le temps restant non auto-logué
+      const sub = document.getElementById('pom-subject').value.trim() || 'Pomodoro';
+      const alreadyLogged = pomState.autoLoggedSecs || 0;
+      const remaining = (pomSettings.work * 60) - alreadyLogged;
+      
+      if (remaining > 0) {
+        state.log.unshift({date:localDate(),seconds:remaining,pauseSeconds:0,note:'🍅 Pomodoro terminé',subject:sub});
+      }
+      pomState.autoLoggedSecs = 0; // Réinitialisation
+
       save();renderLog();updateGoalProgress();renderRecap();renderHistCalendar();
       pomState.cyclesCompleted++;
       const isLong=(pomState.cyclesCompleted%POM_CYCLES===0);
@@ -2351,24 +2285,42 @@ function tickPomodoro(){
     document.getElementById('pom-btn').className='btn btn-green';
   }
 }
+
 function resetPomodoro(){
   pomState.active=false; clearInterval(pomState.interval);
   pomState.elapsed=0; pomState.type='work'; pomState.cyclesCompleted=0;
+  pomState.autoLoggedSecs=0;
   document.getElementById('pom-btn').textContent='▶ Démarrer';
   document.getElementById('pom-btn').className='btn btn-green';
   document.getElementById('recap-pomodoro').style.display='none';
   updatePomDisplay(); renderPomCycles();
 }
+
 function skipPomodoro(){
   pomState.active=false; clearInterval(pomState.interval);
+  
+  // Enregistrer le temps partiel si on passe une session de travail en cours
+  if(pomState.type==='work'){
+    const sub = document.getElementById('pom-subject').value.trim() || 'Pomodoro';
+    const alreadyLogged = pomState.autoLoggedSecs || 0;
+    const remaining = pomState.elapsed - alreadyLogged;
+    if (remaining >= 10) { // On enregistre si au moins 10 secondes travaillées
+      state.log.unshift({date:localDate(), seconds:remaining, pauseSeconds:0, note:'🍅 Pomodoro (écourté)', subject:sub});
+      save(); renderLog(); updateGoalProgress(); renderRecap(); renderHistCalendar();
+    }
+    pomState.autoLoggedSecs = 0;
+    pomState.type='short';
+  } else {
+    pomState.type='work'; pomState.cyclesCompleted++;
+  }
+  
   pomState.elapsed=0;
-  if(pomState.type==='work'){ pomState.type='short'; }
-  else { pomState.type='work'; pomState.cyclesCompleted++; }
   if(pomState.cyclesCompleted%POM_CYCLES===0 && pomState.type==='short') pomState.type='long';
   renderPomCycles(); updatePomDisplay();
   document.getElementById('pom-btn').textContent='▶ Démarrer';
   document.getElementById('pom-btn').className='btn btn-green';
 }
+
 function adjPom(type,delta){
   if(type==='work')  pomSettings.work  = Math.max(5, pomSettings.work+delta);
   if(type==='short') pomSettings.short = Math.max(1, pomSettings.short+delta);
@@ -2380,6 +2332,7 @@ function adjPom(type,delta){
   localStorage.setItem('wt_settings',JSON.stringify(settings));
   if(!pomState.active){ pomState.elapsed=0; updatePomDisplay(); }
 }
+
 function updatePomDisplay(){
   const dur=pomDuration();
   const rem=Math.max(0,dur-pomState.elapsed);
@@ -2388,9 +2341,10 @@ function updatePomDisplay(){
   document.getElementById('pom-type-label').textContent=pomTypeLabel();
   const fg=document.getElementById('pom-ring-fg');
   const pct=pomState.elapsed/dur;
-  fg.style.strokeDashoffset=CIRCUMFERENCE*(1-pct);
+  fg.style.strokeDashoffset=553*(1-pct);
   fg.style.stroke=pomColors();
 }
+
 function renderPomCycles(){
   const c=document.getElementById('pom-cycles');
   c.innerHTML=Array.from({length:POM_CYCLES},(_,i)=>{
@@ -3037,9 +2991,9 @@ function openGoalsModal(){renderDailyGoalsForm();document.getElementById('goals-
 function saveDailyGoals(){
   if(!state.dailyGoals)state.dailyGoals=Array(7).fill(null);
   for(let i=0;i<7;i++){const v=parseFloat(document.getElementById('dg-'+i)?.value);state.dailyGoals[i]=isNaN(v)?state.goal:v;}
-  save();updateGoalProgress();document.getElementById('goals-modal').classList.remove('open');showToast('✓ Objectifs sauvegardés');
+  save();updateGoalProgress();renderRecap();document.getElementById('goals-modal').classList.remove('open');showToast('✓ Objectifs sauvegardés');
 }
-function resetDailyGoals(){state.dailyGoals=Array(7).fill(null);renderDailyGoalsForm();save();updateGoalProgress();showToast('✓ Remis par défaut');}
+function resetDailyGoals(){state.dailyGoals=Array(7).fill(null);renderDailyGoalsForm();save();updateGoalProgress();renderRecap();showToast('✓ Remis par défaut');}
 
 /* --------------------------------------------------
    STATS TAB
@@ -3376,7 +3330,6 @@ async function updateStorageUsage(){
   document.getElementById('storage-bar').style.background = pct>80?'var(--rose)':pct>60?'var(--amber)':'linear-gradient(90deg, var(--indigo), var(--teal))';
 }
 
-
 let histDate = new Date();
 let histSelectedDay = null;
 
@@ -3479,7 +3432,6 @@ function formatHistDate(ds){
   return DAY_FR[d.getDay()]+' '+d.getDate()+' '+MFR[d.getMonth()]+' '+d.getFullYear();
 }
 
-
 /* ------------------------------ */
 document.addEventListener('visibilitychange', ()=>{
   if(document.visibilityState === 'visible'){
@@ -3520,7 +3472,6 @@ document.addEventListener('visibilitychange', ()=>{
     renderTimers();
   }
 });
-
 
 document.addEventListener('keydown',e=>{
   const tag=(e.target.tagName||'').toLowerCase();
