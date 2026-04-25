@@ -1,0 +1,1969 @@
+/* ══════════════════════════════════════════════════
+   FIREBASE
+══════════════════════════════════════════════════ */
+const firebaseConfig={apiKey:"AIzaSyBcfsO77WBlZK5WKIAnfutphTXJbVLHsqA",authDomain:"worklog-thomas.firebaseapp.com",projectId:"worklog-thomas",storageBucket:"worklog-thomas.firebasestorage.app",messagingSenderId:"778800014971",appId:"1:778800014971:web:2419e8e3c92074f098a4de"};
+firebase.initializeApp(firebaseConfig);
+const db=firebase.firestore();
+const auth=firebase.auth();
+let currentUser=null;
+let DOC_REF=null;
+
+/* ══ AUTH ══════════════════════════════════════════ */
+function loginWithGoogle(){
+  const provider=new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider).catch(err=>{
+    const errEl=document.getElementById('login-error');
+    errEl.style.display='block';
+    errEl.textContent='Erreur : '+err.message;
+  });
+}
+
+function logout(){
+  auth.signOut().then(()=>{
+    document.getElementById('login-screen').style.display='flex';
+    document.getElementById('app-shell').style.display='none';
+  });
+}
+
+auth.onAuthStateChanged(user=>{
+  if(user){
+    currentUser=user;
+    DOC_REF=db.collection('worklog').doc(user.uid);
+    const nameEl=document.getElementById('user-name');
+    const avatarEl=document.getElementById('user-avatar');
+    const fallbackEl=document.getElementById('avatar-fallback');
+    const firstName=(user.displayName||user.email).split(' ')[0];
+    if(nameEl) nameEl.textContent=user.displayName||user.email;
+    if(avatarEl){
+      if(user.photoURL){
+        avatarEl.crossOrigin='anonymous';
+        avatarEl.src=user.photoURL+'?sz=36';
+        avatarEl.style.display='block';
+        if(fallbackEl) fallbackEl.style.display='none';
+      } else {
+        avatarEl.style.display='none';
+        if(fallbackEl){
+          fallbackEl.style.display='flex';
+          fallbackEl.textContent=firstName[0].toUpperCase();
+        }
+      }
+    }
+    const sidebarName=document.getElementById('sidebar-user-name');
+    if(sidebarName) sidebarName.textContent=firstName;
+    // Cacher la modal
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app-shell').style.display='flex';
+    // Charger les données
+    state=JSON.parse(localStorage.getItem('worklog_state_'+user.uid)||'null')||{goal:8,log:[],timers:[],events:[],todos:[],docs:[],notes:{},subjectGoals:[]};
+    if(!state.events)state.events=[];
+    if(!state.todos)state.todos=[];
+    if(!state.docs)state.docs=[];
+    if(!state.notes)state.notes={};
+    if(!state.subjectGoals)state.subjectGoals=[];
+    if(!state.dailyGoals)state.dailyGoals=Array(7).fill(null);
+    // Init Storage
+    try { storage = firebase.storage(); } catch(e) { console.warn("Storage init:", e); }
+    if(!state.files) state.files = [];
+    loadFromFirestore();
+  } else {
+    currentUser=null; DOC_REF=null;
+    document.getElementById('login-screen').style.display='flex';
+    document.getElementById('app-shell').style.display='none';
+  }
+});
+
+function setSyncStatus(s,label){
+  const el=document.getElementById('sync-status');
+  el.className='';el.id='sync-status';el.classList.add(s);
+  el.querySelector('.sync-dot').className='sync-dot'+(s==='syncing'?' pulse':'');
+  el.childNodes[1].textContent=' '+label;
+}
+let saveTO=null;
+function saveLocal(){
+  if(currentUser) localStorage.setItem('worklog_state_'+currentUser.uid,JSON.stringify(state));
+}
+function save(){
+  if(currentUser) localStorage.setItem('worklog_state_'+currentUser.uid,JSON.stringify(state));
+  if(!DOC_REF){return;}
+  setSyncStatus('syncing','Synchronisation...');
+  clearTimeout(saveTO);
+  saveTO=setTimeout(()=>{
+    DOC_REF.set(state)
+      .then(()=>setSyncStatus('synced','Synchronisé ✓'))
+      .catch(()=>setSyncStatus('error','Hors ligne'));
+  },800);
+}
+async function loadFromFirestore(){
+  if(!DOC_REF){return;}
+  setSyncStatus('syncing','Chargement...');
+  try{
+    const doc=await DOC_REF.get();
+    if(doc.exists){
+      const data=doc.data();
+      state={...state,...data};
+      if(currentUser) localStorage.setItem('worklog_state_'+currentUser.uid,JSON.stringify(state));
+      setSyncStatus('synced','Synchronisé ✓');
+    } else {
+      await DOC_REF.set(state);
+      setSyncStatus('synced','Prêt ✓');
+    }
+  }catch(e){setSyncStatus('error','Hors ligne — données locales');}
+  if(!state.events)state.events=[];
+  if(!state.todos)state.todos=[];
+  if(!state.docs)state.docs=[];
+  if(!state.notes)state.notes={};
+  if(!state.subjectGoals)state.subjectGoals=[];
+  state.timers.forEach(t=>{
+    if(t.running&&t.startedAt){
+      const re=Math.floor((Date.now()-t.startedAt)/1000);
+      t.elapsed=Math.min(t.duration,re);
+      if(t.elapsed>=t.duration){t.done=true;t.running=false;t.startedAt=null;}
+    }
+  });
+  if(!state.files) state.files = [];
+  buildTabs();
+  loadSettings();
+  updateGoalProgress();renderTimers();renderLog();renderCalendar();renderTodos();renderUpcoming();renderDayView();
+  renderRecap();renderTemplates();renderNotes();renderSubjectGoals();renderHistCalendar();
+  renderFiles(); updateStorageUsage();
+}
+
+/* ══════════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════════ */
+let state=JSON.parse(localStorage.getItem('worklog_state')||'null')||{goal:8,log:[],timers:[],events:[],todos:[],docs:[],notes:{},subjectGoals:[]};
+if(!state.events)state.events=[];
+if(!state.todos)state.todos=[];
+if(!state.docs)state.docs=[];
+if(!state.notes)state.notes={};
+if(!state.subjectGoals)state.subjectGoals=[];
+if(!state.dailyGoals)state.dailyGoals=Array(7).fill(null);
+
+/* ══════════════════════════════════════════════════
+   SETTINGS
+══════════════════════════════════════════════════ */
+let settings = JSON.parse(localStorage.getItem('wt_settings')||'{}');
+settings = Object.assign({breakReminder:false, breakHours:2, autoLog:true, showRecap:true, theme:'warm', pomWork:25, pomShort:5, pomLong:15, templates:[{label:'📚 Cours',subject:'Cours',note:''},{label:'✏️ Révision',subject:'Révision',note:''},{label:'📝 Devoir',subject:'Devoir',note:''},{label:'🔬 Labo',subject:'Labo',note:''}]}, settings);
+
+function saveSettings(){
+  settings.breakReminder = document.getElementById('break-toggle').checked;
+  settings.breakHours    = parseFloat(document.getElementById('break-hours-input').value)||2;
+  settings.autoLog       = document.getElementById('autolog-toggle').checked;
+  settings.showRecap     = document.getElementById('recap-toggle').checked;
+  document.getElementById('break-hours-row').style.display = settings.breakReminder ? 'flex' : 'none';
+  localStorage.setItem('wt_settings', JSON.stringify(settings));
+}
+function loadSettings(){
+  document.getElementById('break-toggle').checked    = settings.breakReminder;
+  document.getElementById('autolog-toggle').checked  = settings.autoLog;
+  document.getElementById('recap-toggle').checked    = settings.showRecap;
+  document.getElementById('break-hours-input').value = settings.breakHours;
+  document.getElementById('break-hours-row').style.display = settings.breakReminder ? 'flex' : 'none';
+  document.getElementById('recap-bar').style.display = settings.showRecap ? '' : 'none';
+  pomSettings.work  = settings.pomWork  || 25;
+  pomSettings.short = settings.pomShort || 5;
+  pomSettings.long  = settings.pomLong  || 15;
+  document.getElementById('pom-work-val').textContent  = pomSettings.work;
+  document.getElementById('pom-short-val').textContent = pomSettings.short;
+  document.getElementById('pom-long-val').textContent  = pomSettings.long;
+}
+function toggleRecapBar(){
+  saveSettings();
+  document.getElementById('recap-bar').style.display = settings.showRecap ? '' : 'none';
+}
+
+/* ══════════════════════════════════════════════════
+   CLOCK & NAVIGATION
+══════════════════════════════════════════════════ */
+const TAB_TITLES = {
+  suivi:    '<span>Suivi</span> — Session de travail',
+  agenda:   '<span>Agenda</span> — Calendrier & Tâches',
+  outils:   '<span>Outils</span> — Pomodoro, Sons & Notes',
+  stats:    '<span>Analyse</span> — Statistiques détaillées',
+  fichiers: '<span>Fichiers</span> — Documents & PDFs'
+};
+function updateBottomNav(n){
+  document.querySelectorAll('.bottom-nav-btn').forEach(b=>b.classList.remove('active'));
+  const btn=document.getElementById('bnav-'+n);
+  if(btn) btn.classList.add('active');
+}
+function switchTab(n, el){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-pill').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+n).classList.add('active');
+  document.getElementById('nav-'+n).classList.add('active');
+  updateBottomNav(n);
+  const tb=document.getElementById('topbar-title');
+  if(tb) tb.innerHTML=TAB_TITLES[n]||'';
+  if(n==='stats') renderStats();
+}
+function updateClock(){
+  const n=new Date();
+  document.getElementById('current-time').textContent=n.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  document.getElementById('today-date').textContent=n.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+}
+updateClock();setInterval(updateClock,1000);
+
+/* ══════════════════════════════════════════════════
+   HELPERS
+══════════════════════════════════════════════════ */
+function fmtTime(s){const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;return[h,m,sec].map(v=>String(v).padStart(2,'0')).join(':');}
+function fmtHM(s){const h=Math.floor(s/3600),m=Math.floor((s%3600)/60);return h>0?`${h}h${m>0?m+'m':''}`:`${m}m`;}
+function localDate(d){const t=d||new Date();return`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;}
+
+/* ══════════════════════════════════════════════════
+   RECAP BAR
+══════════════════════════════════════════════════ */
+function renderRecap(){
+  const today=localDate();
+  const pomExtra = (pomState && pomState.active && pomState.type==='work') ? pomState.elapsed : 0;
+  const todaySecs=state.log.filter(e=>e.date===today).reduce((a,e)=>a+e.seconds,0)+sessionElapsed+pomExtra;
+  const goal=getTodayGoal();
+  const now=new Date(), ws=new Date(now);
+  const day=now.getDay(); ws.setDate(now.getDate()-(day===0?6:day-1)); ws.setHours(0,0,0,0);
+  const weekSecs=state.log.filter(e=>new Date(e.date)>=ws).reduce((a,e)=>a+e.seconds,0);
+  const streak=calcStreak();
+  document.getElementById('recap-today').textContent = fmtHM(todaySecs);
+  document.getElementById('recap-goal').textContent  = goal===0?'Repos':fmtHM(todaySecs)+' / '+goal+'h';
+  document.getElementById('recap-streak').textContent= streak;
+  document.getElementById('recap-week').textContent  = fmtHM(weekSecs);
+}
+
+/* ══════════════════════════════════════════════════
+   SESSION
+══════════════════════════════════════════════════ */
+let sessionRunning=false,sessionStart=null,sessionElapsed=0,sessionInterval=null;
+let pauseRunning=false,pauseStart=null,pauseElapsed=0,pauseInterval=null;
+let sessionAutoLogged=0;
+let timerIntervals={};
+let calDate=new Date();
+let editEvId=null,todoFilter='all';
+let breakNotified=false;
+
+function toggleSession(){
+  if(!sessionRunning){
+    if(pauseRunning)stopPause();
+    sessionRunning=true;sessionStart=Date.now()-sessionElapsed*1000;
+    sessionInterval=setInterval(tickSession,1000);
+    document.getElementById('session-btn').textContent='⏸ Stop';
+    document.getElementById('session-btn').className='btn btn-amber';
+    const pb=document.getElementById('pause-btn');
+    pb.style.opacity='1';pb.style.cursor='pointer';pb.disabled=false;
+    document.getElementById('session-display').classList.add('running');
+    document.getElementById('session-meta').textContent='Session en cours...';
+    breakNotified=false;
+  }else{
+    sessionRunning=false;clearInterval(sessionInterval);
+    document.getElementById('session-btn').textContent='▶ Reprendre';
+    document.getElementById('session-btn').className='btn btn-green';
+    document.getElementById('session-display').classList.remove('running');
+    document.getElementById('session-meta').textContent='Pausé — '+fmtTime(sessionElapsed);
+  }
+}
+function togglePause(){
+  if(!pauseRunning){
+    if(sessionRunning){sessionRunning=false;clearInterval(sessionInterval);document.getElementById('session-display').classList.remove('running');}
+    pauseRunning=true;pauseStart=Date.now()-pauseElapsed*1000;
+    pauseInterval=setInterval(tickPause,1000);
+    document.getElementById('pause-btn').textContent='▶ Reprendre';
+    document.getElementById('pause-btn').className='btn btn-green';
+    document.getElementById('pause-indicator').style.display='flex';
+    document.getElementById('session-btn').textContent='▶ Reprendre';
+    document.getElementById('session-btn').className='btn btn-green';
+    document.getElementById('session-meta').textContent='☕ Pause...';
+    document.getElementById('break-warning').style.display='none';
+  }else{stopPause();toggleSession();}
+}
+function stopPause(){
+  if(!pauseRunning)return;
+  pauseRunning=false;clearInterval(pauseInterval);
+  document.getElementById('pause-btn').textContent='☕ Pause';
+  document.getElementById('pause-btn').className='btn btn-muted';
+  document.getElementById('pause-indicator').style.display='none';
+}
+function tickSession(){
+  sessionElapsed=Math.floor((Date.now()-sessionStart)/1000);
+  document.getElementById('session-display').textContent=fmtTime(sessionElapsed);
+  updateGoalProgress();renderRecap();
+  // Break reminder
+  if(settings.breakReminder && !breakNotified && sessionElapsed>=settings.breakHours*3600){
+    breakNotified=true;
+    document.getElementById('break-warning').style.display='block';
+    showToast('☕ Tu travailles depuis '+fmtHM(sessionElapsed)+'. Pense à faire une pause !','amber');
+  }
+  // Auto-log (if enabled)
+  if(settings.autoLog && sessionElapsed>0 && sessionElapsed%600===0){
+    const subject=document.getElementById('session-subject').value.trim();
+    const note=document.getElementById('session-note').value.trim();
+    state.log.unshift({date:localDate(),seconds:600,pauseSeconds:0,note:'Auto-log'+(note?' — '+note:''),subject});
+    save();renderLog();updateGoalProgress();renderRecap();renderHistCalendar();
+    showToast('⏱ +10min auto-enregistrées');
+  }
+}
+function tickPause(){
+  pauseElapsed=Math.floor((Date.now()-pauseStart)/1000);
+  document.getElementById('pause-display').textContent=fmtTime(pauseElapsed);
+}
+function resetSession(){
+  if(sessionRunning){sessionRunning=false;clearInterval(sessionInterval);}
+  if(pauseRunning){pauseRunning=false;clearInterval(pauseInterval);}
+  sessionElapsed=0;sessionStart=null;pauseElapsed=0;pauseStart=null;sessionAutoLogged=0;
+  breakNotified=false;
+  document.getElementById('session-display').textContent='00:00:00';
+  document.getElementById('pause-display').textContent='00:00:00';
+  document.getElementById('session-meta').textContent='En attente de démarrage';
+  document.getElementById('session-btn').textContent='▶ Démarrer';
+  document.getElementById('session-btn').className='btn btn-green';
+  const pb=document.getElementById('pause-btn');
+  pb.textContent='☕ Pause';pb.className='btn btn-muted';
+  pb.style.opacity='0.4';pb.style.cursor='not-allowed';pb.disabled=true;
+  document.getElementById('pause-indicator').style.display='none';
+  document.getElementById('session-display').classList.remove('running');
+  document.getElementById('session-note').value='';
+  document.getElementById('session-subject').value='';
+  document.getElementById('break-warning').style.display='none';
+  updateGoalProgress();renderRecap();
+}
+function logSession(){
+  if(sessionElapsed<10){showToast('⚠ Session trop courte','red');return;}
+  if(pauseRunning)stopPause();
+  if(sessionRunning){sessionRunning=false;clearInterval(sessionInterval);}
+  const note=document.getElementById('session-note').value.trim();
+  const subject=document.getElementById('session-subject').value.trim();
+  const al=Math.floor(sessionElapsed/600)*600;
+  const rem=sessionElapsed-al;
+  if(rem>0) state.log.unshift({date:localDate(),seconds:rem,pauseSeconds:pauseElapsed,note,subject});
+  save();renderLog();updateGoalProgress();
+  showToast('✓ '+fmtTime(sessionElapsed)+' enregistrées');
+  resetSession();
+}
+function stopSession(){
+  if(!sessionRunning&&sessionElapsed===0){showToast('⚠ Aucune session','red');return;}
+  if(pauseRunning)stopPause();
+  if(sessionRunning){sessionRunning=false;clearInterval(sessionInterval);}
+  const note=document.getElementById('session-note').value.trim();
+  const subject=document.getElementById('session-subject').value.trim();
+  const al=Math.floor(sessionElapsed/600)*600;
+  const rem=sessionElapsed-al;
+  if(rem>=10) state.log.unshift({date:localDate(),seconds:rem,pauseSeconds:pauseElapsed,note,subject});
+  save();renderLog();updateGoalProgress();
+  showToast('⏹ '+fmtHM(sessionElapsed)+' enregistrées');
+  resetSession();
+}
+function addManualTime(){
+  const h=parseInt(document.getElementById('manual-hours').value)||0;
+  const m=parseInt(document.getElementById('manual-mins').value)||0;
+  const subject=document.getElementById('manual-subject').value.trim();
+  const note=document.getElementById('manual-note').value.trim();
+  const total=(h*3600)+(m*60);
+  if(total<60){showToast('⚠ Min 1 minute','red');return;}
+  state.log.unshift({date:localDate(),seconds:total,pauseSeconds:0,note:note||'Ajout manuel',subject});
+  save();renderLog();updateGoalProgress();
+  ['manual-hours','manual-mins','manual-subject','manual-note'].forEach(id=>document.getElementById(id).value='');
+  showToast('✓ '+(h>0?h+'h ':'')+m+'min ajoutées');
+}
+function updateGoalProgress(){
+  const tg=getTodayGoal();
+  document.getElementById('goal-display').textContent=tg;
+  const di=(new Date().getDay()+6)%7;
+  const hc=state.dailyGoals&&state.dailyGoals[di]!=null&&state.dailyGoals[di]!==state.goal;
+  const lbl=document.getElementById('goal-day-label');
+  if(lbl) lbl.textContent=hc?'('+DAYS_LABELS[di]+')':'';
+  const today=localDate();
+  // Include session + pomodoro running time in progress
+  const pomExtra = (pomState.active && pomState.type==='work') ? pomState.elapsed : 0;
+  let done=state.log.filter(e=>e.date===today).reduce((a,e)=>a+e.seconds,0)+sessionElapsed+pomExtra;
+  const gs=tg*3600;
+  const pct=tg===0?100:Math.min(100,Math.round(done/gs*100));
+  document.getElementById('goal-progress').style.width=pct+'%';
+  document.getElementById('progress-done').textContent=Math.floor(done/3600)+'h '+Math.floor((done%3600)/60)+'min';
+  document.getElementById('progress-pct').textContent=tg===0?'Repos 😴':pct+'%';
+}
+
+/* ══════════════════════════════════════════════════
+   TEMPLATES RAPIDES
+══════════════════════════════════════════════════ */
+function renderTemplates(){
+  const container=document.getElementById('templates-container');
+  if(!container) return;
+  container.innerHTML=settings.templates.map((t,i)=>`
+    <button class="template-btn" onclick="applyTemplate(${i})">
+      ${t.label}
+    </button>
+  `).join('');
+}
+function applyTemplate(i){
+  const t=settings.templates[i];
+  document.getElementById('session-subject').value=t.subject||'';
+  document.getElementById('session-note').value=t.note||'';
+  if(!sessionRunning) toggleSession();
+  showToast('▶ Session '+t.subject+' démarrée');
+}
+
+/* ══════════════════════════════════════════════════
+   POMODORO
+══════════════════════════════════════════════════ */
+let pomSettings={work:25,short:5,long:15};
+let pomState={
+  active:false,
+  type:'work', // 'work'|'short'|'long'
+  elapsed:0,
+  cyclesCompleted:0,
+  interval:null
+};
+const POM_CYCLES=4; // cycles before long break
+const CIRCUMFERENCE=2*Math.PI*88; // 553
+
+function pomDuration(){
+  if(pomState.type==='work') return pomSettings.work*60;
+  if(pomState.type==='short') return pomSettings.short*60;
+  return pomSettings.long*60;
+}
+function pomColors(){
+  if(pomState.type==='work') return 'var(--sage)';
+  if(pomState.type==='short') return 'var(--teal)';
+  return 'var(--lav)';
+}
+function pomTypeLabel(){
+  if(pomState.type==='work') return 'TRAVAIL';
+  if(pomState.type==='short') return 'PAUSE';
+  return 'GRANDE PAUSE';
+}
+
+function togglePomodoro(){
+  if(!pomState.active){
+    pomState.active=true;
+    pomState.interval=setInterval(tickPomodoro,1000);
+    document.getElementById('pom-btn').textContent='⏸ Pause';
+    document.getElementById('pom-btn').className='btn btn-amber';
+    if(pomState.type==='work') showToast('🍅 Pomodoro démarré — '+pomSettings.work+' min de travail !');
+    else showToast('☕ Pause '+pomSettings.short+' min');
+  }else{
+    pomState.active=false;
+    clearInterval(pomState.interval);
+    document.getElementById('pom-btn').textContent='▶ Reprendre';
+    document.getElementById('pom-btn').className='btn btn-green';
+  }
+  document.getElementById('recap-pomodoro').style.display=pomState.active?'flex':'none';
+}
+function tickPomodoro(){
+  pomState.elapsed++;
+  updatePomDisplay();
+  if(pomState.elapsed>=pomDuration()){
+    playAlarm();
+    pomState.active=false;
+    clearInterval(pomState.interval);
+    if(pomState.type==='work'){
+      // Log the pomodoro work session
+      const sub=document.getElementById('session-subject').value.trim()||'Pomodoro';
+      state.log.unshift({date:localDate(),seconds:pomSettings.work*60,pauseSeconds:0,note:'🍅 Pomodoro',subject:sub});
+      save();renderLog();updateGoalProgress();renderRecap();renderHistCalendar();
+      pomState.cyclesCompleted++;
+      const isLong=(pomState.cyclesCompleted%POM_CYCLES===0);
+      pomState.type=isLong?'long':'short';
+      showToast('🎉 Pomodoro terminé ! → '+( isLong?'Grande pause ('+pomSettings.long+' min)':'Pause ('+pomSettings.short+' min)'));
+    }else{
+      pomState.type='work';
+      showToast('▶ Reprise du travail — nouveau Pomodoro !');
+    }
+    pomState.elapsed=0;
+    renderPomCycles();
+    updatePomDisplay();
+    document.getElementById('pom-btn').textContent='▶ Démarrer';
+    document.getElementById('pom-btn').className='btn btn-green';
+  }
+}
+function resetPomodoro(){
+  pomState.active=false; clearInterval(pomState.interval);
+  pomState.elapsed=0; pomState.type='work'; pomState.cyclesCompleted=0;
+  document.getElementById('pom-btn').textContent='▶ Démarrer';
+  document.getElementById('pom-btn').className='btn btn-green';
+  document.getElementById('recap-pomodoro').style.display='none';
+  updatePomDisplay(); renderPomCycles();
+}
+function skipPomodoro(){
+  pomState.active=false; clearInterval(pomState.interval);
+  pomState.elapsed=0;
+  if(pomState.type==='work'){ pomState.type='short'; }
+  else { pomState.type='work'; pomState.cyclesCompleted++; }
+  if(pomState.cyclesCompleted%POM_CYCLES===0 && pomState.type==='short') pomState.type='long';
+  renderPomCycles(); updatePomDisplay();
+  document.getElementById('pom-btn').textContent='▶ Démarrer';
+  document.getElementById('pom-btn').className='btn btn-green';
+}
+function adjPom(type,delta){
+  if(type==='work')  pomSettings.work  = Math.max(5, pomSettings.work+delta);
+  if(type==='short') pomSettings.short = Math.max(1, pomSettings.short+delta);
+  if(type==='long')  pomSettings.long  = Math.max(5, pomSettings.long+delta);
+  document.getElementById('pom-work-val').textContent  = pomSettings.work;
+  document.getElementById('pom-short-val').textContent = pomSettings.short;
+  document.getElementById('pom-long-val').textContent  = pomSettings.long;
+  settings.pomWork=pomSettings.work; settings.pomShort=pomSettings.short; settings.pomLong=pomSettings.long;
+  localStorage.setItem('wt_settings',JSON.stringify(settings));
+  if(!pomState.active){ pomState.elapsed=0; updatePomDisplay(); }
+}
+function updatePomDisplay(){
+  const dur=pomDuration();
+  const rem=Math.max(0,dur-pomState.elapsed);
+  const m=Math.floor(rem/60), s=rem%60;
+  document.getElementById('pom-display').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  document.getElementById('pom-type-label').textContent=pomTypeLabel();
+  const fg=document.getElementById('pom-ring-fg');
+  const pct=pomState.elapsed/dur;
+  fg.style.strokeDashoffset=CIRCUMFERENCE*(1-pct);
+  fg.style.stroke=pomColors();
+}
+function renderPomCycles(){
+  const c=document.getElementById('pom-cycles');
+  c.innerHTML=Array.from({length:POM_CYCLES},(_,i)=>{
+    const done=i<(pomState.cyclesCompleted%POM_CYCLES);
+    const active=!done && pomState.type==='work' && i===(pomState.cyclesCompleted%POM_CYCLES);
+    return `<div class="pom-dot${done?' done':active?' active':''}"></div>`;
+  }).join('');
+}
+renderPomCycles(); updatePomDisplay();
+
+/* ══════════════════════════════════════════════════
+   SONS AMBIANTS
+══════════════════════════════════════════════════ */
+let audioCtx=null, soundSource=null, soundGain=null, currentSound=null;
+function initAudio(){
+  if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+}
+function stopSound(){
+  if(soundSource){try{soundSource.stop();}catch(e){}soundSource=null;}
+  currentSound=null;
+  document.querySelectorAll('.sound-btn').forEach(b=>b.classList.remove('active'));
+}
+function generateBrownNoise(){
+  const bufSz=audioCtx.sampleRate*3;
+  const buf=audioCtx.createBuffer(1,bufSz,audioCtx.sampleRate);
+  const data=buf.getChannelData(0);
+  let last=0;
+  for(let i=0;i<bufSz;i++){
+    const w=Math.random()*2-1;
+    data[i]=(last+(0.02*w))/1.02;
+    last=data[i]; data[i]*=3.5;
+  }
+  return buf;
+}
+function toggleSound(type){
+  initAudio();
+  if(currentSound===type){stopSound();return;}
+  stopSound();
+  currentSound=type;
+  document.getElementById('sound-'+type).classList.add('active');
+
+  soundSource=audioCtx.createBufferSource();
+  soundSource.buffer=generateBrownNoise();
+  soundSource.loop=true;
+
+  const filter=audioCtx.createBiquadFilter();
+  if(type==='rain'){
+    filter.type='bandpass'; filter.frequency.value=1200; filter.Q.value=0.4;
+  }else if(type==='forest'){
+    filter.type='lowpass'; filter.frequency.value=500;
+  }else if(type==='cafe'){
+    filter.type='bandpass'; filter.frequency.value=700; filter.Q.value=1.2;
+  }else{
+    filter.type='lowpass'; filter.frequency.value=300;
+  }
+
+  soundGain=audioCtx.createGain();
+  soundGain.gain.value=parseFloat(document.getElementById('vol-slider').value)||0.3;
+
+  soundSource.connect(filter); filter.connect(soundGain); soundGain.connect(audioCtx.destination);
+  soundSource.start();
+  showToast('🎵 Son activé : '+(type==='rain'?'Pluie':type==='forest'?'Forêt':type==='cafe'?'Café':'Bruit doux'));
+}
+function setSoundVolume(v){if(soundGain) soundGain.gain.value=parseFloat(v);}
+
+/* ══════════════════════════════════════════════════
+   NOTES DU JOUR
+══════════════════════════════════════════════════ */
+let notesDate=new Date();
+function noteGoToday(){ notesDate=new Date(); renderNotes(); }
+function changeNoteDate(d){ notesDate.setDate(notesDate.getDate()+d); renderNotes(); }
+let noteSaveTO=null;
+function saveNote(){
+  clearTimeout(noteSaveTO);
+  noteSaveTO=setTimeout(()=>{
+    const ds=localDate(notesDate);
+    const text=document.getElementById('notes-textarea').value;
+    if(!state.notes) state.notes={};
+    if(text.trim()) state.notes[ds]=text;
+    else delete state.notes[ds];
+    save();
+  },800);
+}
+function renderNotes(){
+  const ds=localDate(notesDate);
+  const isToday=ds===localDate();
+  document.getElementById('notes-date-label').textContent=
+    isToday?'Aujourd\'hui, '+ds:notesDate.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})+' ('+ds+')';
+  document.getElementById('notes-textarea').value=(state.notes&&state.notes[ds])||'';
+  // Previous entries
+  const prev=document.getElementById('notes-prev');
+  const entries=Object.entries(state.notes||{}).filter(([d])=>d!==ds).sort(([a],[b])=>b.localeCompare(a)).slice(0,4);
+  if(!entries.length){prev.innerHTML='<div class="empty-log">Aucune note récente</div>';return;}
+  prev.innerHTML=entries.map(([d,t])=>`
+    <div class="notes-entry">
+      <div class="notes-entry-date">${d}</div>
+      <div class="notes-entry-text">${t.slice(0,150)+(t.length>150?'…':'')}</div>
+    </div>
+  `).join('');
+}
+
+/* ══════════════════════════════════════════════════
+   OBJECTIFS PAR MATIÈRE
+══════════════════════════════════════════════════ */
+const COLORS=['--sage','--amber','--teal','--lav','--rose','--sand'];
+function addSubjectGoal(){ document.getElementById('add-subject-form').style.display='flex'; }
+function saveSubjectGoal(){
+  const name=document.getElementById('new-subj-name').value.trim();
+  const goal=parseFloat(document.getElementById('new-subj-goal').value)||0;
+  if(!name||!goal){showToast('⚠ Nom et objectif requis','red');return;}
+  if(!state.subjectGoals) state.subjectGoals=[];
+  state.subjectGoals.push({name,goal,id:Date.now().toString()});
+  document.getElementById('new-subj-name').value='';
+  document.getElementById('new-subj-goal').value='';
+  document.getElementById('add-subject-form').style.display='none';
+  save(); renderSubjectGoals();
+  showToast('✓ Objectif ajouté : '+name+' — '+goal+'h/sem.');
+}
+function deleteSubjectGoal(id){
+  state.subjectGoals=state.subjectGoals.filter(g=>g.id!==id);
+  save(); renderSubjectGoals();
+}
+function renderSubjectGoals(){
+  const list=document.getElementById('subject-goals-list');
+  if(!list) return;
+  if(!state.subjectGoals||!state.subjectGoals.length){
+    list.innerHTML='<div class="empty-log">Aucun objectif — ajoutez une matière</div>';return;
+  }
+  // Calculate last 7 days per subject
+  const now=new Date(); const since=new Date(now); since.setDate(now.getDate()-6); since.setHours(0,0,0,0);
+  const sinceStr=localDate(since);
+  const bySubj={};
+  state.log.filter(e=>e.date>=sinceStr).forEach(e=>{
+    if(e.subject) bySubj[e.subject]=(bySubj[e.subject]||0)+e.seconds;
+  });
+  list.innerHTML=state.subjectGoals.map((g,i)=>{
+    const done=(bySubj[g.name]||0)/3600;
+    const pct=Math.min(100,Math.round(done/g.goal*100));
+    const color=`var(${COLORS[i%COLORS.length]})`;
+    return `<div class="subject-goal-row">
+      <span class="subject-goal-name">${g.name}</span>
+      <div class="subject-goal-bar-wrap">
+        <div class="subject-goal-bar" style="width:${pct}%;background:${color}"></div>
+      </div>
+      <span class="subject-goal-pct" style="color:${color}">${done.toFixed(1)}h / ${g.goal}h</span>
+      <button class="icon-btn del" onclick="deleteSubjectGoal('${g.id}')">✕</button>
+    </div>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════════════════════
+   SOUND - Alarm
+══════════════════════════════════════════════════ */
+function playAlarm(){
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    [523.25,659.25,783.99,1046.50].forEach((freq,i)=>{
+      const osc=ctx.createOscillator(),gain=ctx.createGain(),delay=i*.45;
+      osc.connect(gain);gain.connect(ctx.destination);
+      osc.type='sine';osc.frequency.value=freq;
+      gain.gain.setValueAtTime(0,ctx.currentTime+delay);
+      gain.gain.linearRampToValueAtTime(0.2,ctx.currentTime+delay+.08);
+      gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+delay+1.8);
+      osc.start(ctx.currentTime+delay);osc.stop(ctx.currentTime+delay+1.8);
+    });
+  }catch(e){}
+}
+
+/* ══════════════════════════════════════════════════
+   TIMERS
+══════════════════════════════════════════════════ */
+function addTimer(){
+  const name=document.getElementById('new-timer-name').value.trim();
+  const matiere=document.getElementById('new-timer-matiere').value.trim();
+  const hours=parseInt(document.getElementById('new-timer-hours').value)||0;
+  const mins=parseInt(document.getElementById('new-timer-duration').value)||0;
+  const totalSecs=(hours*3600)+(mins*60);
+  if(!name){showToast('⚠ Nom requis','red');return;}
+  if(totalSecs<1){showToast('⚠ Durée invalide','red');return;}
+  state.timers.push({id:Date.now().toString(),name,matiere,duration:totalSecs,elapsed:0,running:false,done:false});
+  ['new-timer-name','new-timer-matiere','new-timer-hours','new-timer-duration'].forEach(id=>document.getElementById(id).value='');
+  save();renderTimers();showToast('✓ Minuteur ajouté');
+}
+function toggleTimer(id){
+  const t=state.timers.find(x=>x.id===id);if(!t||t.done)return;
+  if(t.running){
+    if(t.startedAt) t.elapsed=Math.min(t.duration,Math.floor((Date.now()-t.startedAt)/1000));
+    t.running=false;t.startedAt=null;
+    clearInterval(timerIntervals[id]);delete timerIntervals[id];
+  }else{
+    t.startedAt=Date.now()-t.elapsed*1000;t.running=true;
+    timerIntervals[id]=setInterval(()=>tickTimer(id),1000);
+  }
+  save();renderTimers();
+}
+function tickTimer(id){
+  const t=state.timers.find(x=>x.id===id);if(!t)return;
+  if(t.startedAt) t.elapsed=Math.min(t.duration,Math.floor((Date.now()-t.startedAt)/1000));
+  else t.elapsed++;
+  if(settings.autoLog && t.elapsed>0&&t.elapsed%600===0&&t.elapsed<t.duration){
+    state.log.unshift({date:localDate(),seconds:600,pauseSeconds:0,note:'Auto-log : '+t.name,subject:t.matiere||''});
+    if(!t.autoLoggedSecs) t.autoLoggedSecs=0;
+    t.autoLoggedSecs+=600;
+    save();renderLog();updateGoalProgress();
+    showToast('⏱ +10min — '+t.name);
+  }
+  if(t.elapsed>=t.duration){
+    t.elapsed=t.duration;t.running=false;t.done=true;
+    clearInterval(timerIntervals[id]);delete timerIntervals[id];
+    const alreadyLogged = t.autoLoggedSecs || 0;
+    const remaining = t.duration - alreadyLogged;
+    if(remaining>0) state.log.unshift({date:localDate(),seconds:remaining,pauseSeconds:0,note:'Fin : '+t.name,subject:t.matiere||''});
+    t.autoLoggedSecs=0;
+    save();renderTimers();renderLog();updateGoalProgress();
+    playAlarm();showToast('🔔 Terminé : '+t.name);
+  }else{saveLocal();renderTimers();}
+}
+function stopAndLogTimer(id){
+  const t=state.timers.find(x=>x.id===id);if(!t||t.done)return;
+  if(t.running){
+    if(t.startedAt) t.elapsed=Math.min(t.duration,Math.floor((Date.now()-t.startedAt)/1000));
+    t.running=false;t.startedAt=null;clearInterval(timerIntervals[id]);delete timerIntervals[id];
+  }
+  if(t.elapsed<10){showToast('⚠ Trop court','red');return;}
+  // Enregistrer tout ce qui n'a pas encore été auto-logué
+  const alreadyLogged = t.autoLoggedSecs || 0;
+  const remaining = t.elapsed - alreadyLogged;
+  if(remaining > 0) state.log.unshift({date:localDate(),seconds:remaining,pauseSeconds:0,note:'Stop : '+t.name,subject:t.matiere||''});
+  const h=Math.floor(t.elapsed/3600),m=Math.floor((t.elapsed%3600)/60);
+  t.elapsed=0; t.running=false; t.done=false; t.autoLoggedSecs=0;
+  save();renderTimers();renderLog();updateGoalProgress();
+  showToast('✓ '+(h>0?h+'h ':'')+m+'min — '+t.name);
+}
+function resetTimer(id){const t=state.timers.find(x=>x.id===id);if(!t)return;t.running=false;t.elapsed=0;t.done=false;t.startedAt=null;clearInterval(timerIntervals[id]);delete timerIntervals[id];save();renderTimers();}
+function addTimeToTimer(id,secs){
+  const t=state.timers.find(x=>x.id===id);if(!t)return;
+  if(t.running&&t.startedAt) t.elapsed=Math.min(t.duration,Math.floor((Date.now()-t.startedAt)/1000));
+  t.duration+=secs;t.done=false;
+  if(t.running) t.startedAt=Date.now()-t.elapsed*1000;
+  save();renderTimers();showToast('✚ +'+Math.round(secs/60)+' min — '+t.name);
+}
+function deleteTimer(id){
+  const t=state.timers.find(x=>x.id===id);if(!t)return;
+  if(t.elapsed>=10){
+    const alreadyLogged = t.autoLoggedSecs || 0;
+    const remaining = t.elapsed - alreadyLogged;
+    if(remaining>0) state.log.unshift({date:localDate(),seconds:remaining,pauseSeconds:0,note:t.name,subject:t.matiere||''});
+    renderLog();updateGoalProgress();
+  }
+  clearInterval(timerIntervals[id]);delete timerIntervals[id];
+  state.timers=state.timers.filter(x=>x.id!==id);
+  save();renderTimers();
+}
+function fmtT(s){if(s<=0)return'00:00:00';const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;return[h,m,sec].map(v=>String(v).padStart(2,'0')).join(':');}
+function timerHTML(t){
+  const rem=t.duration-t.elapsed,pct=Math.round(t.elapsed/t.duration*100);
+  const cls=t.done?'done':(t.running?'active':'');
+  const eh=Math.floor(t.elapsed/3600),em=Math.floor((t.elapsed%3600)/60);
+  const es=eh>0?`${eh}h ${em}min`:`${em}min`;
+  const color=t.done?'var(--amber)':(t.running?'var(--sage)':'var(--text2)');
+  return`<div class="timer-item ${cls}" id="titem-${t.id}">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
+        ${t.matiere?`<span class="mb">${t.matiere}</span>`:''}
+        <span style="font-size:.92rem;font-weight:500">${t.name}</span>
+        ${t.elapsed>0&&!t.done?`<span id="telapsed-${t.id}" style="font-family:var(--mono);font-size:.65rem;color:var(--indigo)">⏱ ${es}</span>`:'<span id="telapsed-'+t.id+'"></span>'}
+      </div>
+      <div style="display:flex;gap:5px;align-items:center;flex-shrink:0">
+        ${!t.done?`<button class="btn btn-green" id="tbtn-play-${t.id}" onclick="toggleTimer('${t.id}')" style="font-size:.75rem;padding:5px 11px;${t.running?'display:none':''}">▶</button>
+        <button class="btn btn-amber" id="tbtn-pause-${t.id}" onclick="toggleTimer('${t.id}')" style="font-size:.75rem;padding:5px 11px;${!t.running?'display:none':''}">⏸</button>`:''}
+        ${t.running||(!t.done&&t.elapsed>0)?`<button class="btn btn-red" style="font-size:.7rem;padding:4px 9px" onclick="stopAndLogTimer('${t.id}')">⏹ Log</button>`:''}
+        <button class="icon-btn" onclick="resetTimer('${t.id}')">↺</button>
+        <button class="icon-btn del" onclick="deleteTimer('${t.id}')">✕</button>
+      </div>
+    </div>
+    <div style="font-family:var(--display);font-size:4rem;font-style:italic;letter-spacing:2px;color:${color};${t.running?'text-shadow:0 0 30px '+color+'33;':''}line-height:1;margin-bottom:10px" id="tval-${t.id}">
+      ${t.done?'Terminé ✓':fmtT(rem)}
+    </div>
+    <div style="background:var(--surface3);border-radius:100px;height:4px;overflow:hidden">
+      <div id="tbar-${t.id}" style="width:${pct}%;height:100%;background:${color};border-radius:100px;transition:width .5s"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:.62rem;color:var(--text2);margin-top:5px">
+      <span id="ttime-${t.id}">${fmtTime(t.elapsed)} écoulées</span>
+      <span>${fmtTime(t.duration)} total</span>
+    </div>
+    ${!t.done?`<div style="display:flex;align-items:center;gap:5px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);flex-wrap:wrap">
+      <span style="font-family:var(--mono);font-size:.6rem;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px">+Temps :</span>
+      <button class="btn btn-muted" style="font-size:.68rem;padding:3px 8px" onclick="addTimeToTimer('${t.id}',300)">+5</button>
+      <button class="btn btn-muted" style="font-size:.68rem;padding:3px 8px" onclick="addTimeToTimer('${t.id}',900)">+15</button>
+      <button class="btn btn-muted" style="font-size:.68rem;padding:3px 8px" onclick="addTimeToTimer('${t.id}',1800)">+30 min</button>
+      <button class="btn btn-muted" style="font-size:.68rem;padding:3px 8px" onclick="addTimeToTimer('${t.id}',3600)">+1h</button>
+      <div style="display:flex;align-items:center;gap:5px;margin-left:auto">
+        <input id="tadd-${t.id}" type="number" min="1" max="240" placeholder="min" class="input-field" style="width:58px;font-size:.75rem;padding:3px 7px;text-align:center">
+        <button class="btn btn-amber" style="font-size:.68rem;padding:3px 9px" onclick="(function(){const v=parseInt(document.getElementById('tadd-${t.id}').value);if(!v||v<1){showToast('⚠ Invalide','red');return;}addTimeToTimer('${t.id}',v*60);document.getElementById('tadd-${t.id}').value='';})()">OK</button>
+      </div>
+    </div>`:''}</div>`;
+}
+function renderTimers(){
+  const list=document.getElementById('timer-list');
+  if(!state.timers.length){list.innerHTML='<div class="empty-log">Aucun minuteur</div>';return;}
+  const eid=Array.from(list.querySelectorAll('[id^="titem-"]')).map(el=>el.id.replace('titem-',''));
+  const cid=state.timers.map(t=>t.id);
+  if(eid.join(',')!==cid.join(',')){
+    list.innerHTML=state.timers.map(t=>timerHTML(t)).join('');
+  }else{
+    state.timers.forEach(t=>{
+      const rem=t.duration-t.elapsed,pct=Math.round(t.elapsed/t.duration*100);
+      const color=t.done?'var(--amber)':(t.running?'var(--sage)':'var(--text2)');
+      const el=document.getElementById('tval-'+t.id);
+      const bar=document.getElementById('tbar-'+t.id);
+      const te=document.getElementById('ttime-'+t.id);
+      const ee=document.getElementById('telapsed-'+t.id);
+      const pb=document.getElementById('tbtn-play-'+t.id);
+      const qb=document.getElementById('tbtn-pause-'+t.id);
+      if(el){el.textContent=t.done?'Terminé ✓':fmtT(rem);el.style.color=color;el.style.textShadow=t.running?'0 0 30px '+color+'33':'none';}
+      if(bar){bar.style.width=pct+'%';bar.style.background=color;}
+      if(te) te.textContent=fmtTime(t.elapsed)+' écoulées';
+      if(ee){const eh=Math.floor(t.elapsed/3600),em=Math.floor((t.elapsed%3600)/60);ee.textContent=t.elapsed>0&&!t.done?'⏱ '+(eh>0?eh+'h ':'')+em+'min':'';}
+      if(pb) pb.style.display=t.running?'none':'inline-flex';
+      if(qb) qb.style.display=t.running?'inline-flex':'none';
+    });
+  }
+  state.timers.filter(t=>t.running).forEach(t=>{if(!timerIntervals[t.id])timerIntervals[t.id]=setInterval(()=>tickTimer(t.id),1000);});
+}
+
+/* ══════════════════════════════════════════════════
+   LOG
+══════════════════════════════════════════════════ */
+function renderLog(){
+  const list=document.getElementById('log-list');
+  if(!state.log.length){list.innerHTML='<div class="empty-log">Aucune session</div>';updateStats();renderHistCalendar();return;}
+  const gs=state.goal*3600;
+  list.innerHTML=state.log.map((e,i)=>{
+    const h=Math.floor(e.seconds/3600),m=Math.floor((e.seconds%3600)/60),s=e.seconds%60;
+    const bp=Math.min(100,Math.round(e.seconds/gs*100));
+    const ph=Math.floor((e.pauseSeconds||0)/3600),pm=Math.floor(((e.pauseSeconds||0)%3600)/60);
+    const ts=h>0?`${h}h ${m}min`:`${m}min ${s}s`;
+    const ps=ph>0?`${ph}h ${pm}min`:`${pm}min`;
+    return`<div class="log-entry"><div style="width:6px;height:6px;border-radius:50%;background:${e.seconds>=gs?'var(--sage)':'var(--amber)'};flex-shrink:0"></div><div style="font-family:var(--mono);font-size:.7rem;color:var(--text2);min-width:90px">${e.date}</div><div style="flex:1"><div style="font-family:var(--mono);font-size:.85rem">${e.subject?`<span class="mb">${e.subject}</span>`:''}<span style="color:var(--text)">${ts}</span>${e.pauseSeconds>0?`<span style="font-size:.68rem;color:var(--teal);margin-left:5px">☕ ${ps}</span>`:''} ${e.note?`<span style="font-size:.68rem;color:var(--text2);font-style:italic">— ${e.note}</span>`:''}</div><div class="log-bar-wrap" style="margin-top:3px"><div class="log-bar ${e.seconds<gs?'under':''}" style="width:${bp}%"></div></div></div><button class="del-btn" onclick="deleteLog(${i})">✕</button></div>`;
+  }).join('');
+  updateStats();
+  renderHistCalendar();
+}
+function deleteLog(i){state.log.splice(i,1);save();renderLog();updateGoalProgress();}
+
+/* ══════════════════════════════════════════════════
+   STREAK & STATS
+══════════════════════════════════════════════════ */
+function calcStreak(){
+  const bd={};state.log.forEach(e=>{bd[e.date]=(bd[e.date]||0)+e.seconds;});
+  let streak=0;const today=localDate();const d=new Date();
+  const tg=getTodayGoal()*3600;const td=bd[today]||0;
+  const sfy=tg>0&&td<tg;let i=sfy?1:0;
+  while(true){
+    const check=new Date(d);check.setDate(d.getDate()-i);
+    const ds=localDate(check);const dow=(check.getDay()+6)%7;
+    const gfd=state.dailyGoals?.[dow]??state.goal;
+    if(gfd===0){i++;continue;}
+    const done=bd[ds]||0;
+    if(done>=gfd*3600){streak++;i++;}else break;
+    if(i>365) break;
+  }
+  return streak;
+}
+function updateStats(){
+  const now=new Date(),tl=localDate();
+  const ws=new Date(now);const day=now.getDay();
+  ws.setDate(now.getDate()-(day===0?6:day-1));ws.setHours(0,0,0,0);
+  const we=state.log.filter(e=>new Date(e.date)>=ws),wsecs=we.reduce((a,e)=>a+e.seconds,0);
+  const ud=[...new Set(we.map(e=>e.date))],avg=ud.length?wsecs/ud.length:0;
+  document.getElementById('stat-week').textContent=fmtHM(wsecs);
+  document.getElementById('stat-avg').textContent=fmtHM(avg);
+  const streak=calcStreak();
+  const se=document.getElementById('stat-streak');
+  se.textContent=streak;se.style.color=streak>=7?'var(--amber)':streak>=3?'var(--sage)':'var(--text)';
+  se.style.textShadow=streak>=7?'0 0 15px rgba(184,136,58,.4)':'none';
+  const days=['L','M','M','J','V','S','D'],gs=state.goal*3600;
+  let html='';
+  for(let i=0;i<7;i++){
+    const d=new Date(ws);d.setDate(ws.getDate()+i);const ds=localDate(d);
+    const dg=(state.dailyGoals?.[i]??state.goal)*3600;
+    const secs=state.log.filter(e=>e.date===ds).reduce((a,e)=>a+e.seconds,0);
+    const pct=dg>0?Math.min(100,Math.round(secs/dg*100)):100;
+    const isT=ds===tl;
+    const color=dg===0?'var(--border2)':secs>=dg?'var(--sage)':(secs>0?'var(--amber)':'var(--border2)');
+    html+=`<div style="flex:1;text-align:center">
+      <div style="height:38px;display:flex;align-items:flex-end;justify-content:center;margin-bottom:2px">
+        <div style="width:9px;height:${Math.max(3,pct*.38)}px;background:${color};border-radius:3px;transition:height .4s"></div>
+      </div>
+      <div style="font-size:.52rem;color:${color};margin-bottom:1px">${secs>=dg&&dg>0?'✓':''}</div>
+      <div style="font-family:var(--mono);font-size:.58rem;color:${isT?'var(--indigo)':'var(--text3)'};font-weight:${isT?'600':'400'}">${days[i]}</div>
+    </div>`;
+  }
+  document.getElementById('weekly-stats').innerHTML=html;
+}
+
+/* ══════════════════════════════════════════════════
+   CALENDAR
+══════════════════════════════════════════════════ */
+const MFR=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+const DFR=['Lu','Ma','Me','Je','Ve','Sa','Di'];
+const CPOOL=['#6A78A8','#6E9470','#B8883A','#7870A0','#9E6862','#548480','#9A7E5A'];
+const CMAP={};let cidx=0;
+function getColor(m){if(!m)return CPOOL[0];if(!CMAP[m]){CMAP[m]=CPOOL[cidx%CPOOL.length];cidx++;}return CMAP[m];}
+function changeMonth(d){calDate.setMonth(calDate.getMonth()+d);renderCalendar();}
+function renderCalendar(){
+  const y=calDate.getFullYear(),m=calDate.getMonth();
+  document.getElementById('cal-month-label').textContent=MFR[m]+' '+y;
+  const grid=document.getElementById('cal-grid');
+  let html=DFR.map(d=>`<div class="cal-day-label">${d}</div>`).join('');
+  const fd=new Date(y,m,1).getDay(),off=fd===0?6:fd-1,dim=new Date(y,m+1,0).getDate();
+  const today=localDate();
+  for(let i=0;i<off;i++){const d=new Date(y,m,-(off-1)+i);html+=`<div class="cal-day other-month"><div class="cal-day-num">${d.getDate()}</div></div>`;}
+  for(let d=1;d<=dim;d++){
+    const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isT=ds===today;
+    const evts=state.events.filter(e=>e.date===ds).slice(0,2);
+    const dots=evts.map(e=>`<span class="cal-evt" style="background:${getColor(e.matiere)}">${e.title}</span>`).join('');
+    // Add note indicator
+    const hasNote=state.notes&&state.notes[ds];
+    html+=`<div class="cal-day${isT?' today':''}" onclick="openEv('${ds}')">
+      <div class="cal-day-num">${d}${hasNote?'<span style="color:var(--lav);font-size:.5rem;margin-left:3px">●</span>':''}</div>${dots}</div>`;
+  }
+  grid.innerHTML=html;renderUpcoming();
+}
+
+/* ══════════════════════════════════════════════════
+   EVENTS
+══════════════════════════════════════════════════ */
+function openEv(date){
+  editEvId=null;
+  ['ev-title','ev-matiere','ev-time','ev-time-end','ev-desc'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('ev-date').value=date||localDate();
+  document.getElementById('ev-modal-title').textContent='Ajouter un événement';
+  document.getElementById('ev-del-btn').style.display='none';
+  document.getElementById('ev-modal').classList.add('open');
+}
+function openEditEv(id){
+  const ev=state.events.find(e=>e.id===id);if(!ev)return;
+  editEvId=id;
+  document.getElementById('ev-title').value=ev.title||'';document.getElementById('ev-matiere').value=ev.matiere||'';
+  document.getElementById('ev-date').value=ev.date||'';document.getElementById('ev-time').value=ev.time||'';
+  document.getElementById('ev-time-end').value=ev.timeEnd||'';
+  document.getElementById('ev-desc').value=ev.description||'';
+  document.getElementById('ev-modal-title').textContent="Modifier l'événement";
+  document.getElementById('ev-del-btn').style.display='inline-flex';
+  document.getElementById('ev-modal').classList.add('open');
+}
+function closeEv(){document.getElementById('ev-modal').classList.remove('open');}
+function saveEv(){
+  const title=document.getElementById('ev-title').value.trim();
+  if(!title){showToast('⚠ Titre requis','red');return;}
+  const ev={id:editEvId||Date.now().toString(),title,matiere:document.getElementById('ev-matiere').value.trim(),date:document.getElementById('ev-date').value,time:document.getElementById('ev-time').value,timeEnd:document.getElementById('ev-time-end').value,description:document.getElementById('ev-desc').value.trim()};
+  if(editEvId){const idx=state.events.findIndex(e=>e.id===editEvId);state.events[idx]=ev;}
+  else state.events.push(ev);
+  save();closeEv();renderCalendar();renderDayView();showToast('✓ Événement sauvegardé');
+}
+function delEv(){state.events=state.events.filter(e=>e.id!==editEvId);save();closeEv();renderCalendar();renderDayView();showToast('✓ Supprimé');}
+function renderUpcoming(){
+  const today=localDate();
+  const up=state.events.filter(e=>e.date>=today).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,8);
+  const c=document.getElementById('upcoming');
+  if(!up.length){c.innerHTML='<div class="empty-log" style="width:100%">Aucun événement à venir</div>';return;}
+  c.innerHTML=up.map(e=>`<div onclick="openEditEv('${e.id}')" style="background:var(--surface2);border:1px solid var(--border);border-left:3px solid ${getColor(e.matiere)};border-radius:9px;padding:10px 14px;cursor:pointer;min-width:160px;flex:1;transition:border-color .15s" onmouseover="this.style.borderLeftColor='${getColor(e.matiere)}'" >
+    <div style="font-family:var(--mono);font-size:.62rem;color:var(--text2)">${e.date}${e.time?' · '+e.time+(e.timeEnd?' → '+e.timeEnd:''):''}${!e.time&&e.timeEnd?' → '+e.timeEnd:''}</div>
+    <div style="font-weight:500;margin:3px 0;font-size:.88rem">${e.title}</div>
+    ${e.matiere?`<span class="mb">${e.matiere}</span>`:''}
+  </div>`).join('');
+}
+
+/* ══════════════════════════════════════════════════
+   TODOS
+══════════════════════════════════════════════════ */
+function saveTodo(){
+  const title=document.getElementById('todo-title').value.trim();
+  if(!title){showToast('⚠ Titre requis','red');return;}
+  state.todos.unshift({id:Date.now().toString(),title,matiere:document.getElementById('todo-matiere').value.trim(),dueDate:document.getElementById('todo-due').value,priority:document.getElementById('todo-priority').value,done:false,createdAt:new Date().toISOString()});
+  ['todo-title','todo-matiere','todo-due'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('todo-priority').value='med';
+  document.getElementById('todo-modal').classList.remove('open');
+  save();renderTodos();showToast('✓ Tâche ajoutée');
+}
+function toggleTodo(id){const t=state.todos.find(x=>x.id===id);if(!t)return;t.done=!t.done;t.completedAt=t.done?localDate():null;save();renderTodos();}
+function deleteTodo(id){state.todos=state.todos.filter(x=>x.id!==id);save();renderTodos();}
+function filterTodo(f){todoFilter=f;renderTodos();}
+function renderTodos(){
+  const list=document.getElementById('todo-list');
+  let todos=[...state.todos];
+  if(todoFilter==='todo') todos=todos.filter(t=>!t.done);
+  if(todoFilter==='done') todos=todos.filter(t=>t.done).sort((a,b)=>(b.completedAt||'').localeCompare(a.completedAt||''));
+  if(!todos.length){list.innerHTML=`<div class="empty-log">${todoFilter==='done'?'Aucune tâche complétée':'Aucune tâche'}</div>`;return;}
+  const pc={high:'p-high',med:'p-med',low:'p-low'},pl={high:'Haute',med:'Moy.',low:'Basse'};
+  list.innerHTML=todos.map(t=>`<div class="todo-item${t.done?' done-item':''}">
+    <div class="todo-check${t.done?' checked':''}" onclick="toggleTodo('${t.id}')">${t.done?'✓':''}</div>
+    <div style="flex:1">
+      <div class="todo-text">${t.matiere?`<span class="mb">${t.matiere}</span>`:''} ${t.title}</div>
+      <div style="font-family:var(--mono);font-size:.65rem;color:var(--text2);margin-top:3px">
+        ${t.dueDate?'📅 '+t.dueDate+' · ':''}<span class="${pc[t.priority]}">${pl[t.priority]}</span>
+      </div>
+    </div>
+    <button class="icon-btn del" onclick="deleteTodo('${t.id}')">✕</button>
+  </div>`).join('');
+}
+
+/* ══════════════════════════════════════════════════
+   DAY VIEW
+══════════════════════════════════════════════════ */
+let dayViewDate=new Date();
+const DAY_FR=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+function changeDayView(d){dayViewDate.setDate(dayViewDate.getDate()+d);renderDayView();}
+function goToday(){dayViewDate=new Date();renderDayView();}
+function renderDayView(){
+  const y=dayViewDate.getFullYear(),m=dayViewDate.getMonth(),d=dayViewDate.getDate();
+  const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  const ts=localDate(),isToday=ds===ts;
+  document.getElementById('day-view-label').textContent=DAY_FR[dayViewDate.getDay()]+' '+d+' '+MFR[m]+' '+y;
+  const de=state.events.filter(e=>e.date===ds);
+  let html='<div style="position:relative">';
+  if(isToday){const now=new Date(),tm=(now.getHours()-6)*60+now.getMinutes();if(tm>=0){const top=tm*(50/60);html+=`<div class="day-now-line" style="top:${top}px"></div><div class="day-now-dot" style="top:${top}px"></div>`;}}
+  for(let h=6;h<=23;h++){
+    const hStr=String(h).padStart(2,'0')+':00';
+    const he=de.filter(e=>e.time&&parseInt(e.time.split(':')[0])===h);
+    const ne=h===8?de.filter(e=>!e.time):[];
+    const all=[...he,...ne];
+    html+=`<div class="day-hour-row" onclick="openEvAtTime('${ds}','${hStr}')"><div class="day-hour-label">${hStr}</div><div class="day-hour-content">`;
+    all.forEach(ev=>{
+      const bg=getColor(ev.matiere);
+      const tc=isLightColor(bg)?'#14100a':'#c5bbab';
+      // Calculate duration for visual height
+      let durationMin=60;
+      if(ev.time && ev.timeEnd){
+        const [sh,sm]=ev.time.split(':').map(Number);
+        const [eh,em]=ev.timeEnd.split(':').map(Number);
+        durationMin=Math.max(30,(eh*60+em)-(sh*60+sm));
+      }
+      const blockH=Math.max(38, durationMin*(50/60)-6);
+      const timeLabel=ev.time+(ev.timeEnd?' → '+ev.timeEnd:'');
+      html+=`<div class="day-event-block" style="background:${bg}1A;border-color:${bg};color:${tc==='#c5bbab'?'var(--text)':tc};min-height:${blockH}px;align-items:flex-start;flex-direction:column;gap:2px" onclick="event.stopPropagation();openEditEv('${ev.id}')">
+        <span class="day-event-time">${timeLabel}</span>
+        <span style="font-weight:500">${ev.title}</span>
+        ${ev.matiere?`<span style="font-size:.6rem;opacity:.65">${ev.matiere}</span>`:''}
+      </div>`;
+    });
+    html+=`</div></div>`;
+  }
+  html+='</div>';
+  document.getElementById('day-view-inner').innerHTML=html;
+  const container=document.getElementById('day-view-container');
+  setTimeout(()=>container.scrollTop=isToday?Math.max(0,(new Date().getHours()-6-1))*50:2*50,50);
+}
+function openEvAtTime(date,time){openEv(date);setTimeout(()=>{document.getElementById('ev-time').value=time;},50);}
+function isLightColor(hex){const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return (r*299+g*587+b*114)/1000>128;}
+
+/* ══════════════════════════════════════════════════
+   ICS IMPORT / EXPORT
+══════════════════════════════════════════════════ */
+function importICS(event){
+  const file=event.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const text=e.target.result;const events=parseICS(text);
+      if(!events.length){showToast('⚠ Aucun événement','red');return;}
+      const eid=new Set(state.events.map(ev=>ev.uid||''));
+      const ne=events.filter(ev=>!eid.has(ev.uid||Math.random()));
+      state.events=[...state.events,...ne];
+      save();renderCalendar();showToast(`✓ ${ne.length} événement(s) importé(s)`);
+    }catch{showToast('⚠ Fichier invalide','red');}
+    event.target.value='';
+  };
+  reader.readAsText(file);
+}
+function parseICS(text){
+  const events=[],lines=text.replace(/\r\n[ \t]/g,'').replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');
+  let cur=null;
+  for(const rawLine of lines){
+    const line=rawLine.trim();
+    if(line==='BEGIN:VEVENT'){cur={};continue;}
+    if(line==='END:VEVENT'){if(cur&&cur.date&&cur.title)events.push(cur);cur=null;continue;}
+    if(!cur)continue;
+    if(line.startsWith('SUMMARY'))cur.title=line.replace(/^SUMMARY[^:]*:/,'').trim()||'Sans titre';
+    else if(line.startsWith('DTSTART')){const v=line.replace(/^DTSTART[^:]*:/,'').trim();cur.date=parseICSDate(v);cur.time=parseICSTime(v);}
+    else if(line.startsWith('DESCRIPTION'))cur.description=line.replace(/^DESCRIPTION[^:]*:/,'').replace(/\\n/g,' ').trim();
+    else if(line.startsWith('CATEGORIES'))cur.matiere=line.replace(/^CATEGORIES[^:]*:/,'').split(',')[0].trim();
+    else if(line.startsWith('UID'))cur.uid=line.replace(/^UID[^:]*:/,'').trim();
+  }
+  return events.map(ev=>({...ev,id:ev.uid||Date.now().toString()+Math.random()}));
+}
+function parseICSDate(v){const d=v.replace(/T.*/,'').replace(/Z$/,'');if(d.length===8)return`${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}`;return localDate();}
+function parseICSTime(v){if(!v.includes('T'))return'';const t=v.replace(/.*T/,'').replace(/Z$/,'');if(t.length>=4)return`${t.slice(0,2)}:${t.slice(2,4)}`;return'';}
+function exportData(){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}));
+  a.download=`worklog-thomas-${localDate()}.json`;a.click();showToast('✓ Données exportées');
+}
+function importData(ev){
+  const f=ev.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      const imp=JSON.parse(e.target.result);
+      if(!imp.log||!Array.isArray(imp.log))throw new Error();
+      const ek=new Set(state.log.map(e=>e.date+'_'+e.seconds));
+      const ne=imp.log.filter(e=>!ek.has(e.date+'_'+e.seconds));
+      state.log=[...state.log,...ne].sort((a,b)=>b.date.localeCompare(a.date));
+      if(imp.goal)state.goal=imp.goal;
+      save();renderLog();updateGoalProgress();showToast(`✓ ${ne.length} session(s) importée(s)`);
+    }catch{showToast('⚠ Fichier invalide','red');}
+    ev.target.value='';
+  };
+  r.readAsText(f);
+}
+
+/* ══════════════════════════════════════════════════
+   GOAL SETTINGS
+══════════════════════════════════════════════════ */
+const DAYS_LABELS=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+function getTodayGoal(){const di=(new Date().getDay()+6)%7;if(state.dailyGoals&&state.dailyGoals[di]!=null)return state.dailyGoals[di];return state.goal;}
+function renderDailyGoalsForm(){
+  if(!state.dailyGoals)state.dailyGoals=Array(7).fill(null);
+  const form=document.getElementById('daily-goals-form');
+  const ti=(new Date().getDay()+6)%7;
+  form.innerHTML=`<style>
+    .dg-row{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--border);}
+    .dg-day{font-family:var(--display);font-size:.95rem;font-style:italic;min-width:96px;}
+    .dg-slider{flex:1;-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;background:var(--border);outline:none;cursor:pointer;}
+    .dg-slider::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:var(--teal);cursor:pointer;}
+    .dg-val{font-family:var(--mono);font-size:1rem;color:var(--teal);min-width:44px;text-align:right;}
+    .dg-row.today .dg-day{color:var(--amber);}
+    .dg-row.rest .dg-val{color:var(--muted);}
+  </style>
+  ${DAYS_LABELS.map((day,i)=>{
+    const val=state.dailyGoals[i]!=null?state.dailyGoals[i]:state.goal;
+    const isToday=i===ti,isRest=val===0;
+    return`<div class="dg-row${isToday?' today':''}${isRest?' rest':''}">
+      <div class="dg-day">${day}${isToday?' ◈':''}</div>
+      <input type="range" class="dg-slider" id="dg-${i}" min="0" max="12" step=".5" value="${val}"
+        oninput="document.getElementById('dgv-${i}').textContent=this.value==0?'Repos':this.value+'h';this.parentElement.className='dg-row${isToday?' today':''}'+( this.value==0?' rest':'');">
+      <div class="dg-val" id="dgv-${i}">${isRest?'Repos':val+'h'}</div>
+    </div>`;
+  }).join('')}`;
+}
+function openGoalsModal(){renderDailyGoalsForm();document.getElementById('goals-modal').classList.add('open');}
+function saveDailyGoals(){
+  if(!state.dailyGoals)state.dailyGoals=Array(7).fill(null);
+  for(let i=0;i<7;i++){const v=parseFloat(document.getElementById('dg-'+i)?.value);state.dailyGoals[i]=isNaN(v)?state.goal:v;}
+  save();updateGoalProgress();document.getElementById('goals-modal').classList.remove('open');showToast('✓ Objectifs sauvegardés');
+}
+function resetDailyGoals(){state.dailyGoals=Array(7).fill(null);renderDailyGoalsForm();save();updateGoalProgress();showToast('✓ Remis par défaut');}
+
+/* ══════════════════════════════════════════════════
+   STATS TAB
+══════════════════════════════════════════════════ */
+let statPeriod=30;
+function setStatPeriod(days,btn){
+  statPeriod=days;
+  document.querySelectorAll('[id^="stat-btn-"]').forEach(b=>b.className='btn btn-muted');
+  btn.className='btn btn-teal';
+  renderStats();
+}
+function renderStats(){
+  const now=new Date();
+  const cutoff=new Date(now);cutoff.setDate(now.getDate()-statPeriod+1);cutoff.setHours(0,0,0,0);
+  const cs=localDate(cutoff);
+  const logs=state.log.filter(e=>e.date>=cs);
+  const total=logs.reduce((a,e)=>a+e.seconds,0);
+  const ud=[...new Set(logs.map(e=>e.date))];
+  const avg=ud.length?total/ud.length:0;
+  const bd={};logs.forEach(e=>{bd[e.date]=(bd[e.date]||0)+e.seconds;});
+  const best=Object.values(bd).length?Math.max(...Object.values(bd)):0;
+  document.getElementById('kpi-total').textContent=fmtHM(total);
+  document.getElementById('kpi-avg').textContent=fmtHM(avg);
+  document.getElementById('kpi-best').textContent=fmtHM(best);
+  document.getElementById('kpi-days').textContent=ud.length+' / '+statPeriod;
+  document.getElementById('stat-period-label').textContent=`Du ${cs} au ${localDate()}`;
+  const streak=calcStreak();
+  const ks=document.getElementById('kpi-streak-stat');
+  if(ks){ks.textContent=streak;ks.style.color=streak>=7?'var(--amber)':streak>=3?'var(--sage)':'var(--text)';ks.style.textShadow=streak>=7?'0 0 15px rgba(184,136,58,.4)':'none';}
+  const ksl=document.getElementById('kpi-streak-label');
+  if(ksl) ksl.textContent=streak===0?'pas encore':streak===1?'jour consécutif':streak+' jours consécutifs';
+  renderBarChart(bd,cs,statPeriod);renderSubjectChart(logs);renderStatLog(logs);
+  renderSubjectGoals();
+}
+function renderBarChart(bd,cs,days){
+  const container=document.getElementById('bar-chart');
+  const maxS=Math.max(...Object.values(bd),state.goal*3600,1);
+  const today=localDate();
+  let html='<div style="display:flex;align-items:flex-end;gap:3px;height:110px;padding:0 4px">';
+  const limit=Math.min(days,90);
+  for(let i=limit-1;i>=0;i--){
+    const d=new Date();d.setDate(d.getDate()-i);const ds=localDate(d);
+    const secs=bd[ds]||0;const pct=Math.round(secs/maxS*100);
+    const h=Math.floor(secs/3600),m=Math.floor((secs%3600)/60);
+    const lbl=secs>0?(h>0?`${h}h${m>0?m+'m':''}`:m+'m'):'';
+    const isT=ds===today;
+    const color=secs>=state.goal*3600?'var(--sage)':secs>0?'var(--indigo)':'var(--border)';
+    const bw=limit>60?7:limit>30?11:17;
+    html+=`<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:${bw}px;max-width:${bw*2}px" title="${ds}: ${lbl||'0'}">
+      <div style="width:100%;height:${Math.max(2,pct)}%;background:${color};border-radius:3px 3px 0 0;${isT?'box-shadow:0 0 6px '+color+'66;':''}border-bottom:${isT?'2px solid var(--amber)':'none'}"></div>
+    </div>`;
+  }
+  html+='</div>';
+  if(days>7){
+    html+=`<div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:.6rem;color:var(--text3);margin-top:7px;padding:0 4px"><span>${cs.slice(5)}</span><span>${localDate().slice(5)}</span></div>`;
+  }
+  container.innerHTML=html;
+}
+function renderSubjectChart(logs){
+  const container=document.getElementById('subject-chart');
+  const bs={};logs.forEach(e=>{const k=e.subject||'—';bs[k]=(bs[k]||0)+e.seconds;});
+  const total=Object.values(bs).reduce((a,b)=>a+b,0)||1;
+  const sorted=Object.entries(bs).sort((a,b)=>b[1]-a[1]);
+  const colors=['var(--indigo)','var(--sage)','var(--amber)','var(--lav)','var(--rose)','var(--teal)'];
+  container.innerHTML=sorted.map(([name,secs],i)=>{
+    const pct=Math.round(secs/total*100);const color=colors[i%colors.length];
+    return`<div>
+      <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:.72rem;margin-bottom:4px">
+        <span style="color:${color}">${name}</span>
+        <span style="color:var(--text2)">${fmtHM(secs)} · ${pct}%</span>
+      </div>
+      <div style="background:var(--surface3);border-radius:100px;height:5px;overflow:hidden">
+        <div style="width:${pct}%;height:100%;background:${color};border-radius:100px;transition:width .6s"></div>
+      </div>
+    </div>`;
+  }).join('')||'<div class="empty-log">Aucune donnée</div>';
+}
+function renderStatLog(logs){
+  const container=document.getElementById('stat-log');
+  if(!logs.length){container.innerHTML='<div class="empty-log">Aucune session</div>';return;}
+  const bd={};logs.forEach(e=>{if(!bd[e.date])bd[e.date]=[];bd[e.date].push(e);});
+  container.innerHTML=Object.keys(bd).sort((a,b)=>b.localeCompare(a)).map(date=>{
+    const ds=bd[date].reduce((a,e)=>a+e.seconds,0);const ok=ds>=state.goal*3600;
+    return`<div style="padding:9px 0;border-bottom:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+        <span style="font-family:var(--mono);font-size:.72rem;color:var(--text2)">${date}</span>
+        <span style="font-family:var(--display);font-size:.95rem;font-style:italic;color:${ok?'var(--sage)':'var(--amber)'}">${fmtHM(ds)}</span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px">
+        ${bd[date].map(e=>`<span style="font-family:var(--mono);font-size:.62rem;background:var(--surface3);border:1px solid var(--border);border-radius:4px;padding:2px 7px;color:var(--indigo)">${e.subject||'—'} ${fmtHM(e.seconds)}</span>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════════════════════
+   TOAST
+══════════════════════════════════════════════════ */
+function showToast(msg,type){
+  const t=document.getElementById('toast');t.textContent=msg;
+  const c=type==='red'?'var(--rose)':type==='amber'?'var(--amber)':'var(--sage)';
+  t.style.borderColor=c;t.style.color=c;
+  t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3200);
+}
+
+/* ══════════════════════════════════════════════════
+   FICHIERS — Firebase Storage
+══════════════════════════════════════════════════ */
+let storage = null;
+let userFiles = []; // cache local
+
+function initStorage(){
+  if(!storage && currentUser) try { storage = firebase.storage(); } catch(e) { console.warn("Storage init:", e); }
+}
+
+function getFileIcon(name){
+  const ext = name.split('.').pop().toLowerCase();
+  if(['pdf'].includes(ext)) return '📄';
+  if(['png','jpg','jpeg','gif','webp'].includes(ext)) return '🖼️';
+  if(['doc','docx'].includes(ext)) return '📝';
+  if(['xls','xlsx'].includes(ext)) return '📊';
+  if(['ppt','pptx'].includes(ext)) return '📽️';
+  return '📎';
+}
+
+function formatFileSize(bytes){
+  if(bytes < 1024) return bytes+'B';
+  if(bytes < 1024*1024) return (bytes/1024).toFixed(1)+'KB';
+  return (bytes/(1024*1024)).toFixed(2)+'MB';
+}
+
+function handleDrop(e){
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('dragover');
+  const files = Array.from(e.dataTransfer.files);
+  uploadFiles(files);
+}
+
+function handleFileSelect(e){
+  const files = Array.from(e.target.files);
+  uploadFiles(files);
+  e.target.value='';
+}
+
+function uploadFiles(files){
+  if(!currentUser){ showToast('⚠ Connecte-toi d\'abord','red'); return; }
+  initStorage();
+  const matiere = document.getElementById('upload-matiere').value.trim();
+  const desc = document.getElementById('upload-desc').value.trim();
+
+  files.forEach(file => {
+    if(file.size > 50*1024*1024){ showToast('⚠ '+file.name+' dépasse 50MB','red'); return; }
+
+    const fileId = Date.now().toString() + '_' + Math.random().toString(36).slice(2);
+    const path = `users/${currentUser.uid}/${fileId}_${file.name}`;
+    const ref = storage.ref(path);
+
+    // Show progress
+    const progId = 'prog_'+fileId;
+    const uploadEl = document.createElement('div');
+    uploadEl.id = progId;
+    uploadEl.innerHTML = `<div class="file-item">
+      <div class="file-icon">${getFileIcon(file.name)}</div>
+      <div style="flex:1">
+        <div class="file-name">${file.name}</div>
+        <div class="file-progress"><div class="file-progress-bar" id="bar_${fileId}" style="width:0%"></div></div>
+        <div class="file-meta" id="pct_${fileId}">Démarrage...</div>
+      </div>
+    </div>`;
+    document.getElementById('upload-list').appendChild(uploadEl);
+
+    const uploadTask = ref.put(file, {
+      customMetadata: { matiere, desc, originalName: file.name, uploadedAt: new Date().toISOString() }
+    });
+
+    uploadTask.on('state_changed',
+      snap => {
+        const pct = Math.round(snap.bytesTransferred/snap.totalBytes*100);
+        const barEl = document.getElementById('bar_'+fileId);
+        const pctEl = document.getElementById('pct_'+fileId);
+        if(barEl) barEl.style.width = pct+'%';
+        if(pctEl) pctEl.textContent = pct+'% — '+formatFileSize(snap.bytesTransferred)+' / '+formatFileSize(snap.totalBytes);
+      },
+      err => {
+        const progEl = document.getElementById(progId);
+        if(progEl) progEl.remove();
+        showToast('❌ Erreur upload : '+file.name,'red');
+        console.error(err);
+      },
+      async () => {
+        const url = await uploadTask.snapshot.ref.getDownloadURL();
+        const meta = await uploadTask.snapshot.ref.getMetadata();
+
+        // Save metadata to Firestore
+        if(!state.files) state.files = [];
+        state.files.unshift({
+          id: fileId,
+          name: file.name,
+          path,
+          url,
+          size: file.size,
+          type: file.type,
+          matiere,
+          desc,
+          uploadedAt: new Date().toISOString()
+        });
+        save();
+
+        const progEl = document.getElementById(progId);
+        if(progEl) progEl.remove();
+
+        renderFiles();
+        updateStorageUsage();
+        showToast('✅ '+file.name+' uploadé !');
+      }
+    );
+  });
+}
+
+function renderFiles(){
+  const list = document.getElementById('file-list');
+  if(!state.files || !state.files.length){
+    list.innerHTML = '<div class="empty-log">Aucun fichier — commence par uploader !</div>';
+    return;
+  }
+
+  // Update matière filter options
+  const filterSel = document.getElementById('file-filter-matiere');
+  const currentFilter = filterSel.value;
+  const matieres = [...new Set(state.files.map(f=>f.matiere).filter(Boolean))];
+  filterSel.innerHTML = '<option value="">Toutes les matières</option>' +
+    matieres.map(m=>`<option value="${m}" ${m===currentFilter?'selected':''}>${m}</option>`).join('');
+
+  // Filter & sort
+  let files = [...state.files];
+  if(currentFilter) files = files.filter(f=>f.matiere===currentFilter);
+  const sort = document.getElementById('file-sort').value;
+  if(sort==='name') files.sort((a,b)=>a.name.localeCompare(b.name));
+  else if(sort==='size') files.sort((a,b)=>b.size-a.size);
+  else files.sort((a,b)=>b.uploadedAt.localeCompare(a.uploadedAt));
+
+  list.innerHTML = files.map(f => {
+    const date = new Date(f.uploadedAt).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'});
+    const isPdf = f.name.toLowerCase().endsWith('.pdf');
+    const isImg = /\.(png|jpg|jpeg|gif|webp)$/i.test(f.name);
+    return `<div class="file-item">
+      <div class="file-icon">${getFileIcon(f.name)}</div>
+      <div style="flex:1;min-width:0">
+        <div class="file-name">${f.name}</div>
+        <div class="file-meta">${f.matiere?'<span class="mb">'+f.matiere+'</span>':''} ${formatFileSize(f.size)} · ${date} ${f.desc?'· '+f.desc:''}</div>
+      </div>
+      <div style="display:flex;gap:5px;flex-shrink:0">
+        ${isPdf?`<button class="btn btn-teal" style="font-size:.7rem;padding:4px 10px" onclick="openPdf('${f.url}','${f.name.replace(/'/g,"\\'")}')">👁 Voir</button>`:''}
+        ${isImg?`<button class="btn btn-teal" style="font-size:.7rem;padding:4px 10px" onclick="openImg('${f.url}','${f.name.replace(/'/g,"\\'")}')">👁 Voir</button>`:''}
+        <a href="${f.url}" target="_blank" download="${f.name}" class="btn btn-muted" style="font-size:.7rem;padding:4px 10px">⬇</a>
+        <button class="icon-btn del" onclick="deleteFile('${f.id}','${f.path.replace(/'/g,"\\'")}')">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openPdf(url, name){
+  document.getElementById('pdf-modal-title').textContent = name;
+  document.getElementById('pdf-iframe').src = url;
+  document.getElementById('pdf-download-btn').href = url;
+  document.getElementById('pdf-download-btn').download = name;
+  document.getElementById('pdf-modal').classList.add('open');
+}
+
+function openImg(url, name){
+  window.open(url, '_blank');
+}
+
+function closePdfModal(){
+  document.getElementById('pdf-modal').classList.remove('open');
+  document.getElementById('pdf-iframe').src = '';
+}
+
+async function deleteFile(id, path){
+  if(!confirm('Supprimer ce fichier définitivement ?')) return;
+  initStorage();
+  try {
+    await storage.ref(path).delete();
+  } catch(e){ console.warn('Storage delete:', e); }
+  state.files = (state.files||[]).filter(f=>f.id!==id);
+  save(); renderFiles(); updateStorageUsage();
+  showToast('✓ Fichier supprimé');
+}
+
+async function updateStorageUsage(){
+  if(!state.files || !state.files.length){
+    document.getElementById('storage-text').textContent = '0 MB / 2.5 GB';
+    document.getElementById('storage-bar').style.width = '0%';
+    return;
+  }
+  const totalBytes = state.files.reduce((a,f)=>a+(f.size||0),0);
+  const totalMB = totalBytes/(1024*1024);
+  const pct = Math.min(100,(totalMB/2560)*100);
+  document.getElementById('storage-text').textContent = totalMB.toFixed(1)+' MB / 2 500 MB';
+  document.getElementById('storage-bar').style.width = pct+'%';
+  document.getElementById('storage-bar').style.background = pct>80?'var(--rose)':pct>60?'var(--amber)':'linear-gradient(90deg, var(--indigo), var(--teal))';
+}
+
+
+let histDate = new Date();
+let histSelectedDay = null;
+
+function changeHistMonth(d){ histDate.setMonth(histDate.getMonth()+d); renderHistCalendar(); }
+function histGoToday(){ histDate = new Date(); histSelectedDay = null; renderHistCalendar(); }
+
+function renderHistCalendar(){
+  const y = histDate.getFullYear(), m = histDate.getMonth();
+  document.getElementById('hist-month-label').textContent = MFR[m] + ' ' + y;
+
+  // Build daily totals
+  const byDay = {};
+  state.log.forEach(e => { byDay[e.date] = (byDay[e.date]||0) + e.seconds; });
+
+  // Max for the month (for bar scaling)
+  const today = localDate();
+  const fd = new Date(y, m, 1).getDay(), off = fd===0?6:fd-1;
+  const dim = new Date(y, m+1, 0).getDate();
+  let maxSecs = 0;
+  for(let d=1;d<=dim;d++){
+    const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    if(byDay[ds] > maxSecs) maxSecs = byDay[ds];
+  }
+  maxSecs = Math.max(maxSecs, state.goal*3600);
+
+  const grid = document.getElementById('hist-cal-grid');
+  let html = DFR.map(d=>`<div style="font-family:var(--mono);font-size:.58rem;color:var(--text3);text-align:center;padding:3px 0;text-transform:uppercase;letter-spacing:1px">${d}</div>`).join('');
+
+  // Empty cells
+  for(let i=0;i<off;i++) html += `<div class="hist-day empty"><div class="hist-day-num"></div></div>`;
+
+  for(let d=1;d<=dim;d++){
+    const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const secs = byDay[ds] || 0;
+    const pct = maxSecs > 0 ? Math.min(100, Math.round(secs/maxSecs*100)) : 0;
+    const goalSecs = state.goal * 3600;
+    const color = secs === 0 ? 'var(--border)' : secs >= goalSecs ? 'var(--sage)' : 'var(--amber)';
+    const isToday = ds === today;
+    const isSelected = ds === histSelectedDay;
+    const hStr = secs > 0 ? fmtHM(secs) : '';
+    const isFuture = ds > today;
+
+    html += `<div class="hist-day${isToday?' today':''}${isSelected?' selected':''}${isFuture?' empty':''}"
+      onclick="selectHistDay('${ds}')"
+      title="${ds}: ${hStr||'Rien enregistré'}">
+      <div class="hist-day-num">${d}</div>
+      ${!isFuture && secs > 0 ? `
+        <div class="hist-day-bar"><div class="hist-day-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+        <div class="hist-day-hours" style="color:${color}">${hStr}</div>
+      ` : !isFuture ? `<div class="hist-day-bar"><div class="hist-day-bar-fill" style="width:0%"></div></div>` : ''}
+    </div>`;
+  }
+  grid.innerHTML = html;
+
+  // Re-render detail if a day is selected
+  if(histSelectedDay) renderHistDayDetail(histSelectedDay);
+}
+
+function selectHistDay(ds){
+  histSelectedDay = ds;
+  renderHistCalendar();
+  renderHistDayDetail(ds);
+}
+
+function renderHistDayDetail(ds){
+  const detail = document.getElementById('hist-day-detail');
+  const sessions = state.log.filter(e => e.date === ds);
+  const total = sessions.reduce((a,e) => a+e.seconds, 0);
+
+  if(!sessions.length){
+    detail.style.display = 'block';
+    document.getElementById('hist-day-title').textContent = formatHistDate(ds);
+    document.getElementById('hist-day-total').textContent = 'Rien enregistré';
+    document.getElementById('hist-day-total').style.color = 'var(--text3)';
+    document.getElementById('hist-day-sessions').innerHTML = '<div class="empty-log">Aucune session ce jour-là</div>';
+    return;
+  }
+
+  detail.style.display = 'block';
+  document.getElementById('hist-day-title').textContent = formatHistDate(ds);
+  document.getElementById('hist-day-total').textContent = fmtHM(total);
+  document.getElementById('hist-day-total').style.color = total >= state.goal*3600 ? 'var(--sage)' : 'var(--amber)';
+
+  document.getElementById('hist-day-sessions').innerHTML = sessions.map(e => {
+    const h=Math.floor(e.seconds/3600), m=Math.floor((e.seconds%3600)/60), s=e.seconds%60;
+    const ts = h>0 ? `${h}h ${m}min` : `${m}min ${s>0?s+'s':''}`;
+    return `<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)">
+      <div style="width:6px;height:6px;border-radius:50%;background:${e.seconds>=600?'var(--sage)':'var(--amber)'};flex-shrink:0"></div>
+      <div style="flex:1;font-family:var(--mono);font-size:.82rem">
+        ${e.subject?`<span class="mb">${e.subject}</span>`:''}
+        <span style="color:var(--text)">${ts}</span>
+        ${e.note?`<span style="font-size:.68rem;color:var(--text2);font-style:italic"> — ${e.note}</span>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function formatHistDate(ds){
+  const d = new Date(ds+'T12:00:00');
+  return DAY_FR[d.getDay()]+' '+d.getDate()+' '+MFR[d.getMonth()]+' '+d.getFullYear();
+}
+
+
+══════════════════════════════════════════════════ */
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState === 'visible'){
+    // Recalculer le temps écoulé réel pour la session
+    if(sessionRunning && sessionStart){
+      const newElapsed = Math.floor((Date.now() - sessionStart) / 1000);
+      // Auto-log les tranches de 10min manquées
+      if(settings.autoLog){
+        const oldTranches = Math.floor(sessionElapsed / 600);
+        const newTranches = Math.floor(newElapsed / 600);
+        const missed = newTranches - oldTranches;
+        if(missed > 0){
+          const subject = document.getElementById('session-subject').value.trim();
+          const note = document.getElementById('session-note').value.trim();
+          for(let i = 0; i < missed; i++){
+            state.log.unshift({date:localDate(), seconds:600, pauseSeconds:0, note:'Auto-log'+(note?' — '+note:''), subject});
+          }
+          saveLocal(); renderLog(); updateGoalProgress();
+          showToast('⏱ +'+missed*10+'min auto-enregistrées (rattrapage)');
+        }
+      }
+      sessionElapsed = newElapsed;
+      document.getElementById('session-display').textContent = fmtTime(sessionElapsed);
+      updateGoalProgress(); renderRecap();
+    }
+    // Recalculer les minuteurs
+    state.timers.forEach(t => {
+      if(t.running && t.startedAt){
+        const real = Math.floor((Date.now() - t.startedAt) / 1000);
+        t.elapsed = Math.min(t.duration, real);
+        if(t.elapsed >= t.duration){
+          t.done = true; t.running = false; t.startedAt = null;
+          clearInterval(timerIntervals[t.id]); delete timerIntervals[t.id];
+          playAlarm(); showToast('🔔 Minuteur terminé : ' + t.name);
+        }
+      }
+    });
+    renderTimers();
+  }
+});
+
+
+document.addEventListener('keydown',e=>{
+  const tag=(e.target.tagName||'').toLowerCase();
+  if(tag==='input'||tag==='textarea'||tag==='select') return;
+  if(e.key==='Escape'){
+    document.querySelectorAll('.modal-overlay.open').forEach(m=>m.classList.remove('open'));
+    return;
+  }
+});
+
+/* ══════════════════════════════════════════════════
+   AUTO SAVE
+══════════════════════════════════════════════════ */
+setInterval(()=>{
+  if(!DOC_REF) return;
+  const ha=sessionRunning||pauseRunning||state.timers.some(t=>t.running);
+  if(ha){
+    saveLocal();
+    DOC_REF.set(state).then(()=>setSyncStatus('synced','Synchronisé ✓')).catch(()=>setSyncStatus('error','Hors ligne'));
+  }
+},20*60*1000);
+
+/* ══════════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════════ */
+// Auth state change handles everything — see auth.onAuthStateChanged above
+
+/* ══════════════════════════════════════════════════
+   RENDER TABS HTML (onglets générés en JS)
+══════════════════════════════════════════════════ */
+function buildTabs(){
+  // ── SUIVI ──
+  document.getElementById('tab-suivi').innerHTML = `
+    <div class="grid">
+      <div class="card sage col-1">
+        <div class="card-title">Session de travail</div>
+        <div style="margin-bottom:14px">
+          <div class="section-sub">Démarrage rapide</div>
+          <div class="template-grid" id="templates-container"></div>
+        </div>
+        <div class="big-timer" id="session-display">00:00:00</div>
+        <div class="session-meta" id="session-meta">En attente de démarrage</div>
+        <div id="pause-indicator">☕ Pause : <span id="pause-display" style="font-family:var(--mono)">00:00:00</span></div>
+        <div class="btn-row">
+          <button class="btn btn-green" id="session-btn" onclick="toggleSession()">▶ Démarrer</button>
+          <button class="btn btn-muted" id="pause-btn" onclick="togglePause()" style="opacity:.4;cursor:not-allowed" disabled>☕ Pause</button>
+          <button class="btn btn-muted" onclick="resetSession()">↺ Reset</button>
+          <button class="btn btn-red" onclick="stopSession()">⏹ Stop</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <input class="input-field" id="session-subject" placeholder="Matière" style="flex:1.2">
+          <input class="input-field" id="session-note" placeholder="Note..." style="flex:1">
+        </div>
+        <div class="section-divider">
+          <div class="section-sub">Ajout manuel</div>
+          <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center">
+            <input class="input-field" id="manual-hours" type="number" min="0" placeholder="h" style="width:58px">
+            <input class="input-field" id="manual-mins" type="number" min="0" max="59" placeholder="min" style="width:66px">
+            <input class="input-field" id="manual-subject" placeholder="Matière" style="flex:1;min-width:80px">
+            <input class="input-field" id="manual-note" placeholder="Note..." style="flex:1;min-width:80px">
+            <button class="btn btn-amber" onclick="addManualTime()">+ Ajouter</button>
+          </div>
+        </div>
+      </div>
+      <div class="card amber col-2">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div class="card-title" style="margin:0">Objectif journalier</div>
+          <button class="btn btn-muted" style="font-size:.68rem;padding:4px 10px" onclick="openGoalsModal()">⚙ Par jour</button>
+        </div>
+        <div style="display:flex;align-items:flex-end;gap:10px;margin-bottom:12px">
+          <div class="goal-number" id="goal-display">8</div>
+          <div style="font-family:var(--mono);font-size:.82rem;color:var(--text2);padding-bottom:7px">h / jour</div>
+          <div id="goal-day-label" style="font-family:var(--mono);font-size:.65rem;color:var(--teal);padding-bottom:9px"></div>
+        </div>
+        <div class="progress-bar-wrap"><div class="progress-bar" id="goal-progress" style="width:0%"></div></div>
+        <div class="progress-label"><span id="progress-done">0h 0min</span><span id="progress-pct">0%</span></div>
+        <div class="stats-row" id="weekly-stats"></div>
+      </div>
+      <div class="card teal col-full">
+        <div class="card-title">Minuteurs personnalisés</div>
+        <div id="timer-list"></div>
+        <div style="display:flex;gap:7px;margin-top:14px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--border)">
+          <input class="input-field" id="new-timer-name" placeholder="Nom du minuteur" style="flex:2;min-width:110px">
+          <input class="input-field" id="new-timer-matiere" placeholder="Matière" style="flex:1.2;min-width:80px">
+          <input class="input-field" id="new-timer-hours" type="number" min="0" max="23" placeholder="h" style="flex:0.5;min-width:42px">
+          <input class="input-field" id="new-timer-duration" type="number" min="0" max="59" placeholder="min" style="flex:0.6;min-width:50px">
+          <button class="btn btn-green" onclick="addTimer()">+ Ajouter</button>
+        </div>
+      </div>
+      <div class="card col-2">
+        <div class="card-title">Journal des heures</div>
+        <div class="log-list" id="log-list"></div>
+        <div class="stats-row">
+          <div class="stat-box"><span class="stat-val" id="stat-week">0h</span><span class="stat-label">Semaine</span></div>
+          <div class="stat-box"><span class="stat-val" id="stat-avg">0h</span><span class="stat-label">Moy./jour</span></div>
+          <div class="stat-box"><span class="stat-val" id="stat-streak">0</span><span class="stat-label">🔥 Streak</span></div>
+        </div>
+      </div>
+      <div class="card col-full">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <div class="card-title" style="margin:0">📅 Historique — heures travaillées</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <button class="cal-nav" onclick="changeHistMonth(-1)">‹</button>
+            <div id="hist-month-label" style="font-family:var(--display);font-size:1rem;font-style:italic;color:var(--text);min-width:160px;text-align:center"></div>
+            <button class="cal-nav" onclick="changeHistMonth(1)">›</button>
+            <button class="btn btn-muted" onclick="histGoToday()" style="font-size:.68rem;padding:4px 10px">Auj.</button>
+          </div>
+        </div>
+        <div id="hist-cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:14px"></div>
+        <div id="hist-day-detail" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <div id="hist-day-title" style="font-family:var(--display);font-size:1rem;font-style:italic;color:var(--text)"></div>
+            <div id="hist-day-total" style="font-family:var(--display);font-size:1.5rem;font-style:italic;color:var(--teal)"></div>
+          </div>
+          <div id="hist-day-sessions"></div>
+        </div>
+      </div>
+    </div>`;
+
+  // ── AGENDA ──
+  document.getElementById('tab-agenda').innerHTML = `
+    <div class="grid">
+      <div class="card teal col-1">
+        <div class="card-title">Calendrier</div>
+        <div class="cal-header">
+          <button class="cal-nav" onclick="changeMonth(-1)">‹</button>
+          <div class="cal-month" id="cal-month-label"></div>
+          <button class="cal-nav" onclick="changeMonth(1)">›</button>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+        <div style="display:flex;gap:7px;margin-top:12px">
+          <button class="btn btn-teal" style="flex:1" onclick="openEv()">+ Ajouter</button>
+          <button class="btn btn-muted" style="flex:1" onclick="document.getElementById('ics-input').click()">📥 .ICS</button>
+          <input type="file" id="ics-input" accept=".ics" style="display:none" onchange="importICS(event)">
+        </div>
+      </div>
+      <div class="card lav col-2">
+        <div class="card-title">Tâches à faire</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div class="filter-row">
+            <button class="filter-pill active" onclick="filterTodo('all');this.closest('.filter-row').querySelectorAll('.filter-pill').forEach(b=>b.classList.remove('active'));this.classList.add('active')">Toutes</button>
+            <button class="filter-pill" onclick="filterTodo('todo');this.closest('.filter-row').querySelectorAll('.filter-pill').forEach(b=>b.classList.remove('active'));this.classList.add('active')">À faire</button>
+            <button class="filter-pill" onclick="filterTodo('done');this.closest('.filter-row').querySelectorAll('.filter-pill').forEach(b=>b.classList.remove('active'));this.classList.add('active')">Faites</button>
+          </div>
+          <button class="btn btn-purple" style="font-size:.72rem;padding:5px 12px" onclick="document.getElementById('todo-modal').classList.add('open')">+ Tâche</button>
+        </div>
+        <div class="todo-list" id="todo-list"></div>
+      </div>
+      <div class="card col-full">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div class="card-title" style="margin:0">Vue journalière</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <button class="cal-nav" onclick="changeDayView(-1)">‹</button>
+            <div id="day-view-label" style="font-family:var(--display);font-size:1rem;font-style:italic;color:var(--text);min-width:210px;text-align:center"></div>
+            <button class="cal-nav" onclick="changeDayView(1)">›</button>
+            <button class="btn btn-muted" onclick="goToday()" style="font-size:.68rem;padding:4px 10px">Aujourd'hui</button>
+          </div>
+        </div>
+        <div id="day-view-container" style="position:relative;overflow-y:auto;max-height:480px;border:1px solid var(--border);border-radius:10px">
+          <div style="position:relative" id="day-view-inner"></div>
+        </div>
+      </div>
+      <div class="card col-full">
+        <div class="card-title">Événements à venir</div>
+        <div id="upcoming" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+      </div>
+    </div>`;
+
+  // ── OUTILS ──
+  document.getElementById('tab-outils').innerHTML = `
+    <div class="grid">
+      <div class="card sage col-1">
+        <div class="card-title">🍅 Pomodoro</div>
+        <div class="pom-ring">
+          <svg width="200" height="200" viewBox="0 0 200 200">
+            <circle class="pom-ring-bg" cx="100" cy="100" r="88" fill="none" stroke-width="8"/>
+            <circle class="pom-ring-fg" id="pom-ring-fg" cx="100" cy="100" r="88" fill="none" stroke-width="8" stroke-dasharray="553" stroke-dashoffset="0"/>
+          </svg>
+          <div class="pom-ring-label">
+            <div class="pom-ring-time" id="pom-display">25:00</div>
+            <div class="pom-ring-type" id="pom-type-label">TRAVAIL</div>
+          </div>
+        </div>
+        <div class="pom-cycles" id="pom-cycles"></div>
+        <div class="btn-row" style="justify-content:center">
+          <button class="btn btn-green" id="pom-btn" onclick="togglePomodoro()">▶ Démarrer</button>
+          <button class="btn btn-muted" onclick="resetPomodoro()">↺ Reset</button>
+          <button class="btn btn-muted" onclick="skipPomodoro()" title="Passer à la phase suivante">⏭</button>
+        </div>
+        <div class="pom-settings">
+          <div class="section-sub" style="margin-bottom:8px">Durées (minutes)</div>
+          <div class="pom-setting-row">
+            <span class="pom-setting-label">🍅 Travail</span>
+            <div class="pom-number">
+              <button class="pom-num-btn" onclick="adjPom('work',-5)">−</button>
+              <span class="pom-num-val" id="pom-work-val">25</span>
+              <button class="pom-num-btn" onclick="adjPom('work',5)">+</button>
+            </div>
+          </div>
+          <div class="pom-setting-row">
+            <span class="pom-setting-label">☕ Pause courte</span>
+            <div class="pom-number">
+              <button class="pom-num-btn" onclick="adjPom('short',-1)">−</button>
+              <span class="pom-num-val" id="pom-short-val">5</span>
+              <button class="pom-num-btn" onclick="adjPom('short',1)">+</button>
+            </div>
+          </div>
+          <div class="pom-setting-row">
+            <span class="pom-setting-label">🌿 Grande pause</span>
+            <div class="pom-number">
+              <button class="pom-num-btn" onclick="adjPom('long',-5)">−</button>
+              <span class="pom-num-val" id="pom-long-val">15</span>
+              <button class="pom-num-btn" onclick="adjPom('long',5)">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="card teal">
+          <div class="card-title">🎵 Sons ambiants</div>
+          <div class="sound-grid">
+            <button class="sound-btn" id="sound-rain" onclick="toggleSound('rain')"><span class="sound-icon">🌧️</span><span class="sound-name">Pluie douce</span></button>
+            <button class="sound-btn" id="sound-forest" onclick="toggleSound('forest')"><span class="sound-icon">🌲</span><span class="sound-name">Forêt</span></button>
+            <button class="sound-btn" id="sound-cafe" onclick="toggleSound('cafe')"><span class="sound-icon">☕</span><span class="sound-name">Café</span></button>
+            <button class="sound-btn" id="sound-white" onclick="toggleSound('white')"><span class="sound-icon">〰️</span><span class="sound-name">Bruit doux</span></button>
+          </div>
+          <div class="volume-row">
+            <span class="volume-label">🔈</span>
+            <input type="range" class="vol-slider" id="vol-slider" min="0" max="1" step="0.05" value="0.3" oninput="setSoundVolume(this.value)">
+            <span class="volume-label">🔊</span>
+          </div>
+        </div>
+        <div class="card amber">
+          <div class="card-title">⚙️ Paramètres & Rappels</div>
+          <div class="toggle-row">
+            <div><div class="toggle-lbl">Rappel de pause</div><div class="toggle-sub">Alerte après N heures continues</div></div>
+            <label class="toggle-switch"><input type="checkbox" id="break-toggle" onchange="saveSettings()"><div class="toggle-track"></div></label>
+          </div>
+          <div class="toggle-row" id="break-hours-row" style="display:none">
+            <span class="toggle-lbl">Après combien d'heures ?</span>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input class="input-field" id="break-hours-input" type="number" min="0.5" max="8" step="0.5" value="2" style="width:70px" oninput="saveSettings()">
+              <span style="font-family:var(--mono);font-size:.72rem;color:var(--text2)">h</span>
+            </div>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-lbl">Auto-log toutes les 10 min</div><div class="toggle-sub">Enregistre automatiquement pendant la session</div></div>
+            <label class="toggle-switch"><input type="checkbox" id="autolog-toggle" checked onchange="saveSettings()"><div class="toggle-track"></div></label>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-lbl">Barre de récapitulatif</div><div class="toggle-sub">Afficher les stats en haut de l'écran</div></div>
+            <label class="toggle-switch"><input type="checkbox" id="recap-toggle" checked onchange="toggleRecapBar()"><div class="toggle-track"></div></label>
+          </div>
+        </div>
+      </div>
+      <div class="card lav col-full">
+        <div class="card-title">📝 Notes du jour</div>
+        <div class="notes-date-nav">
+          <button class="cal-nav" onclick="changeNoteDate(-1)">‹</button>
+          <span class="notes-date-label" id="notes-date-label"></span>
+          <button class="cal-nav" onclick="changeNoteDate(1)">›</button>
+          <button class="btn btn-muted" onclick="noteGoToday()" style="font-size:.68rem;padding:4px 9px">Auj.</button>
+        </div>
+        <textarea class="input-field" id="notes-textarea" rows="4" placeholder="Écris tes notes, réflexions..." style="resize:vertical;line-height:1.7" oninput="saveNote()"></textarea>
+        <div style="margin-top:14px">
+          <div class="section-sub">Notes récentes</div>
+          <div class="notes-prev-entries" id="notes-prev"></div>
+        </div>
+      </div>
+      <div class="card sand col-full">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div class="card-title" style="margin:0">🎯 Objectifs hebdo par matière</div>
+          <button class="btn btn-muted" style="font-size:.68rem;padding:4px 10px" onclick="addSubjectGoal()">+ Matière</button>
+        </div>
+        <div id="subject-goals-list"></div>
+        <div id="add-subject-form" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <input class="input-field" id="new-subj-name" placeholder="Matière (ex: Maths)" style="flex:2;min-width:120px">
+            <input class="input-field" id="new-subj-goal" type="number" min="1" max="50" placeholder="h / sem." style="width:90px">
+            <button class="btn btn-sage" onclick="saveSubjectGoal()">✓ Ajouter</button>
+            <button class="btn btn-muted" onclick="document.getElementById('add-subject-form').style.display='none'">Annuler</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+
+  // ── STATS ──
+  document.getElementById('tab-stats').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="card" style="padding:14px 20px">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <div class="card-title" style="margin:0">Période</div>
+          <button class="btn btn-muted" id="stat-btn-7"   style="font-size:.72rem;padding:5px 12px" onclick="setStatPeriod(7,this)">7 j</button>
+          <button class="btn btn-teal"  id="stat-btn-30"  style="font-size:.72rem;padding:5px 12px" onclick="setStatPeriod(30,this)">30 j</button>
+          <button class="btn btn-muted" id="stat-btn-90"  style="font-size:.72rem;padding:5px 12px" onclick="setStatPeriod(90,this)">3 mois</button>
+          <button class="btn btn-muted" id="stat-btn-365" style="font-size:.72rem;padding:5px 12px" onclick="setStatPeriod(365,this)">1 an</button>
+          <div id="stat-period-label" style="font-family:var(--mono);font-size:.68rem;color:var(--text2);margin-left:auto"></div>
+        </div>
+      </div>
+      <div class="grid-5 kpi-row-outter">
+        <div class="card" style="text-align:center;padding:18px 12px"><div class="card-title" style="justify-content:center;margin-bottom:8px">Total</div><div class="stat-val" id="kpi-total" style="font-size:2rem">0h</div></div>
+        <div class="card" style="text-align:center;padding:18px 12px"><div class="card-title" style="justify-content:center;margin-bottom:8px">Moy./jour</div><div class="stat-val" id="kpi-avg" style="font-size:2rem;color:var(--teal)">0h</div></div>
+        <div class="card" style="text-align:center;padding:18px 12px"><div class="card-title" style="justify-content:center;margin-bottom:8px">Meilleur</div><div class="stat-val" id="kpi-best" style="font-size:2rem;color:var(--sage)">0h</div></div>
+        <div class="card" style="text-align:center;padding:18px 12px"><div class="card-title" style="justify-content:center;margin-bottom:8px">Jours actifs</div><div class="stat-val" id="kpi-days" style="font-size:2rem;color:var(--lav)">0</div></div>
+        <div class="card" style="text-align:center;padding:18px 12px"><div class="card-title" style="justify-content:center;margin-bottom:8px">🔥 Streak</div><div class="stat-val" id="kpi-streak-stat" style="font-size:2rem;color:var(--amber)">0</div><div style="font-family:var(--mono);font-size:.58rem;color:var(--text3);margin-top:3px" id="kpi-streak-label">jours</div></div>
+      </div>
+      <div class="card"><div class="card-title">Heures par jour</div><div id="bar-chart" style="overflow-x:auto"></div></div>
+      <div class="card sage"><div class="card-title">Répartition par matière</div><div id="subject-chart" style="display:flex;flex-direction:column;gap:10px"></div></div>
+      <div class="card"><div class="card-title">Détail des sessions</div><div id="stat-log" style="max-height:300px;overflow-y:auto"></div></div>
+    </div>`;
+
+  // ── FICHIERS ──
+  document.getElementById('tab-fichiers').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="card sage">
+        <div class="card-title">📤 Uploader un fichier</div>
+        <div class="file-drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()"
+          ondragover="event.preventDefault();this.classList.add('dragover')"
+          ondragleave="this.classList.remove('dragover')"
+          ondrop="handleDrop(event)">
+          <div class="file-drop-icon">📂</div>
+          <div class="file-drop-text">Glisse tes fichiers ici ou clique pour sélectionner</div>
+          <div class="file-drop-sub">PDF, Images, Word, Excel — max 50MB par fichier</div>
+        </div>
+        <input type="file" id="file-input" style="display:none" multiple accept=".pdf,.png,.jpg,.jpeg,.gif,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" onchange="handleFileSelect(event)">
+        <div style="display:flex;gap:8px;margin-top:12px;align-items:center">
+          <input class="input-field" id="upload-matiere" placeholder="Matière (optionnel)" style="flex:1">
+          <input class="input-field" id="upload-desc" placeholder="Description (optionnel)" style="flex:1.5">
+        </div>
+        <div id="upload-list" style="margin-top:12px;display:flex;flex-direction:column;gap:6px"></div>
+      </div>
+      <div class="card amber">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div class="card-title" style="margin:0">Espace utilisé</div>
+          <span id="storage-text" style="font-family:var(--mono);font-size:.72rem;color:var(--text2)">—</span>
+        </div>
+        <div class="storage-bar-wrap"><div class="storage-bar" id="storage-bar" style="width:0%"></div></div>
+        <div style="font-family:var(--mono);font-size:.62rem;color:var(--text3)">Quota : 2.5 GB (formule gratuite partagée)</div>
+      </div>
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+          <div class="card-title" style="margin:0">📄 Mes fichiers</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select class="input-field" id="file-filter-matiere" style="width:160px;font-size:.78rem" onchange="renderFiles()">
+              <option value="">Toutes les matières</option>
+            </select>
+            <select class="input-field" id="file-sort" style="width:130px;font-size:.78rem" onchange="renderFiles()">
+              <option value="date">Plus récents</option>
+              <option value="name">Nom</option>
+              <option value="size">Taille</option>
+            </select>
+          </div>
+        </div>
+        <div id="file-list"><div class="empty-log">Aucun fichier — commence par uploader !</div></div>
+      </div>
+    </div>`;
+}
