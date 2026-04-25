@@ -326,7 +326,6 @@ body {
   line-height: 1;
   white-space: nowrap;
 }
-/* Filled (softer than neon) */
 .btn-green   { background: var(--sage);  border-color: var(--sage);  color: #0a1a0c; }
 .btn-green:hover { filter: brightness(1.12); }
 .btn-amber   { background: var(--amber); border-color: var(--amber); color: #16090a; }
@@ -969,7 +968,7 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
   .main-wrap { height: calc(100vh - 60px); }
   .topbar { padding: 0 14px; height: 46px; }
   .topbar-title { font-size: .82rem; }
-  .recap-bar { display: none; }
+  .recap-bar { display: none; } 
   .main-scroll { padding: 14px 12px 24px; }
   .grid, .grid-3, .grid-5 { grid-template-columns: 1fr; gap: 12px; }
   .col-1, .col-2, .col-full { grid-column: 1/-1; }
@@ -990,9 +989,10 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
   .sound-grid { grid-template-columns: repeat(2,1fr); gap: 6px; }
   .sound-btn { padding: 10px 8px; }
   .sound-icon { font-size: 1.3rem; }
+  .ex-actions { opacity: 1 !important; }
 }
 
-/* --- Fichiers --- */
+/* --- Fichiers & Explorateur --- */
 .file-drop-zone {
   border: 2px dashed var(--border2);
   border-radius: var(--r-lg);
@@ -1011,35 +1011,20 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
 .file-drop-text { font-family: var(--body); font-size: .92rem; color: var(--text); font-weight: 500; }
 .file-drop-sub  { font-family: var(--mono); font-size: .65rem; color: var(--text3); margin-top: 6px; }
 
-.file-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  transition: border-color .2s, background .2s;
-  margin-bottom: 8px;
-}
-.file-item:hover { border-color: var(--border2); background: var(--surface3); }
-.file-icon { font-size: 1.8rem; flex-shrink: 0; width: 40px; text-align: center; }
-.file-name { font-size: .9rem; font-weight: 500; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.file-meta { font-family: var(--mono); font-size: .62rem; color: var(--text3); margin-top: 4px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.file-progress {
-  width: 100%;
-  height: 3px;
-  background: var(--border);
-  border-radius: 100px;
-  overflow: hidden;
-  margin-top: 6px;
-}
-.file-progress-bar {
-  height: 100%;
-  background: var(--indigo);
-  border-radius: 100px;
-  transition: width .2s;
-}
+.breadcrumb-nav { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: .8rem; margin-bottom: 16px; padding: 10px 14px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r-sm); overflow-x: auto; white-space: nowrap; }
+.bc-link { color: var(--indigo); cursor: pointer; transition: color .2s; }
+.bc-link:hover { color: var(--text); text-decoration: underline; }
+.bc-sep { color: var(--text3); }
+
+.explorer-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 14px; }
+.explorer-item { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 14px 10px; text-align: center; cursor: pointer; transition: all .2s; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
+.explorer-item:hover { border-color: var(--indigo); background: var(--surface3); transform: translateY(-2px); }
+.ex-icon { font-size: 2.8rem; margin-bottom: 10px; line-height: 1; }
+.ex-name { font-size: .75rem; color: var(--text); font-weight: 500; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
+.ex-meta { font-family: var(--mono); font-size: .6rem; color: var(--text3); }
+.ex-actions { display: flex; gap: 6px; margin-top: 10px; opacity: 0; transition: opacity .2s; }
+.explorer-item:hover .ex-actions { opacity: 1; }
+.ex-actions .icon-btn { padding: 4px 8px; font-size: .75rem; }
 
 .storage-bar-wrap {
   background: var(--surface3);
@@ -1133,7 +1118,7 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
 .section-divider { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
 .section-sub { font-family: var(--mono); font-size: .6rem; color: var(--text3); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
 
-/* Bottom nav caché par défaut */
+/* Bottom nav caché par défaut (desktop/tablet) */
 .bottom-nav { display: none; }
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
@@ -1142,6 +1127,8 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
 </head>
 <body>
+
+
 
 <div class="modal-overlay" id="ev-modal">
   <div class="modal">
@@ -1193,6 +1180,8 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
     <button class="btn btn-purple" style="width:100%" onclick="saveTodo()">+ Ajouter la tâche</button>
   </div>
 </div>
+
+
 
 <div id="login-screen" style="
   display:flex; position:fixed; inset:0; z-index:999;
@@ -1290,6 +1279,8 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
     <button class="nav-pill" id="nav-fichiers" onclick="switchTab('fichiers',this)">
       <span class="ni">📁</span><span>Fichiers</span>
     </button>
+
+
   </nav>
 
   <div class="sidebar-foot">
@@ -1510,9 +1501,11 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
             <button class="btn btn-muted" onclick="resetPomodoro()">↺ Reset</button>
             <button class="btn btn-muted" onclick="skipPomodoro()" title="Passer à la phase suivante">⏭</button>
           </div>
-          <div style="margin-top:12px; width: 100%">
+          
+          <div style="margin-top:12px">
             <input class="input-field" id="pom-subject" placeholder="Matière (ex: Maths)" style="width:100%; text-align:center;">
           </div>
+
           <div class="pom-settings">
             <div class="section-sub" style="margin-bottom:8px">Durées (minutes)</div>
             <div class="pom-setting-row">
@@ -1715,13 +1708,9 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
               ondrop="handleDrop(event)">
               <span class="file-drop-icon">📂</span>
               <div class="file-drop-text">Glisse ici ou clique</div>
-              <div class="file-drop-sub">PDF, Images, Word, Excel · max 50MB</div>
+              <div class="file-drop-sub">Aucune limite de taille ou format</div>
             </div>
-            <input type="file" id="file-input" style="display:none" multiple accept=".pdf,.png,.jpg,.jpeg,.gif,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" onchange="handleFileSelect(event)">
-            <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">
-              <input class="input-field" id="upload-matiere" placeholder="Matière (optionnel)">
-              <input class="input-field" id="upload-desc" placeholder="Description (optionnel)">
-            </div>
+            <input type="file" id="file-input" style="display:none" multiple onchange="handleFileSelect(event)">
             <div id="upload-list" style="margin-top:10px;display:flex;flex-direction:column;gap:6px"></div>
           </div>
 
@@ -1731,36 +1720,22 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
               <span id="storage-text" style="font-family:var(--mono);font-size:.72rem;color:var(--text2)">—</span>
             </div>
             <div class="storage-bar-wrap"><div class="storage-bar" id="storage-bar" style="width:0%"></div></div>
-            <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:.6rem;color:var(--text3);margin-top:4px">
-              <span>0 MB utilisés</span>
-              <span>2 500 MB disponibles</span>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-title">📊 Résumé</div>
-            <div id="files-stats" style="display:flex;flex-direction:column;gap:8px">
-              <div class="empty-log">Aucun fichier</div>
-            </div>
+            <div id="files-stats" style="margin-top:12px; display:flex; flex-direction:column; gap:6px;"></div>
           </div>
 
         </div>
 
         <div class="card col-2">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-            <div class="card-title" style="margin:0">📄 Mes fichiers <span id="files-count" style="color:var(--text3);font-size:.6rem;margin-left:4px"></span></div>
-            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-              <select class="input-field" id="file-filter-matiere" style="width:150px;font-size:.78rem" onchange="renderFiles()">
-                <option value="">Toutes les matières</option>
-              </select>
-              <select class="input-field" id="file-sort" style="width:120px;font-size:.78rem" onchange="renderFiles()">
-                <option value="date">Plus récents</option>
-                <option value="name">A-Z</option>
-                <option value="size">Taille</option>
-              </select>
-            </div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:8px">
+            <div class="card-title" style="margin:0">🗂 Explorateur de fichiers</div>
+            <button class="btn btn-muted" style="font-size:.7rem; padding: 4px 10px;" onclick="createFolder()">+ Nouveau dossier</button>
           </div>
-          <div id="file-list"><div class="empty-log" style="padding:40px 0">Aucun fichier — commence par uploader !</div></div>
+          
+          <div class="breadcrumb-nav" id="explorer-breadcrumbs">
+            </div>
+
+          <div class="explorer-grid" id="explorer-grid">
+            </div>
         </div>
 
       </div>
@@ -1795,6 +1770,7 @@ const firebaseConfig={apiKey:"AIzaSyBcfsO77WBlZK5WKIAnfutphTXJbVLHsqA",authDomai
 firebase.initializeApp(firebaseConfig);
 const db=firebase.firestore();
 const auth=firebase.auth();
+let storage=null;
 let currentUser=null;
 let DOC_REF=null;
 
@@ -1840,20 +1816,23 @@ auth.onAuthStateChanged(user=>{
     }
     const sidebarName=document.getElementById('sidebar-user-name');
     if(sidebarName) sidebarName.textContent=firstName;
-    // Cacher la modal
+    
     document.getElementById('login-screen').style.display='none';
     document.getElementById('app-shell').style.display='flex';
-    // Charger les données
-    state=JSON.parse(localStorage.getItem('worklog_state_'+user.uid)||'null')||{goal:8,log:[],timers:[],events:[],todos:[],docs:[],notes:{},subjectGoals:[]};
+    
+    // Charger les données (ajout de folders pour l'explorateur)
+    state=JSON.parse(localStorage.getItem('worklog_state_'+user.uid)||'null')||{goal:8,log:[],timers:[],events:[],todos:[],docs:[],notes:{},subjectGoals:[], files:[], folders:[]};
     if(!state.events)state.events=[];
     if(!state.todos)state.todos=[];
     if(!state.docs)state.docs=[];
     if(!state.notes)state.notes={};
     if(!state.subjectGoals)state.subjectGoals=[];
     if(!state.dailyGoals)state.dailyGoals=Array(7).fill(null);
+    if(!state.files)state.files=[];
+    if(!state.folders)state.folders=[];
+    
     // Init Storage
     try { storage = firebase.storage(); } catch(e) { console.warn('Storage:', e); }
-    if(!state.files) state.files = [];
     loadFromFirestore();
   } else {
     currentUser=null; DOC_REF=null;
@@ -1898,11 +1877,15 @@ async function loadFromFirestore(){
       setSyncStatus('synced','Prêt ✓');
     }
   }catch(e){setSyncStatus('error','Hors ligne — données locales');}
+  
   if(!state.events)state.events=[];
   if(!state.todos)state.todos=[];
   if(!state.docs)state.docs=[];
   if(!state.notes)state.notes={};
   if(!state.subjectGoals)state.subjectGoals=[];
+  if(!state.files)state.files=[];
+  if(!state.folders)state.folders=[];
+  
   state.timers.forEach(t=>{
     if(t.running&&t.startedAt){
       const re=Math.floor((Date.now()-t.startedAt)/1000);
@@ -1910,23 +1893,17 @@ async function loadFromFirestore(){
       if(t.elapsed>=t.duration){t.done=true;t.running=false;t.startedAt=null;}
     }
   });
-  if(!state.files) state.files = [];
+  
   loadSettings();
   updateGoalProgress();renderTimers();renderLog();renderCalendar();renderTodos();renderUpcoming();renderDayView();
   renderRecap();renderTemplates();renderNotes();renderSubjectGoals();renderHistCalendar();
-  renderFiles(); updateStorageUsage();
+  renderExplorer(); updateStorageUsage();
 }
 
 /* --------------------------------------------------
    STATE
 /* ------------------------------ */
-let state=JSON.parse(localStorage.getItem('worklog_state')||'null')||{goal:8,log:[],timers:[],events:[],todos:[],docs:[],notes:{},subjectGoals:[]};
-if(!state.events)state.events=[];
-if(!state.todos)state.todos=[];
-if(!state.docs)state.docs=[];
-if(!state.notes)state.notes={};
-if(!state.subjectGoals)state.subjectGoals=[];
-if(!state.dailyGoals)state.dailyGoals=Array(7).fill(null);
+let state={goal:8,log:[],timers:[],events:[],todos:[],docs:[],notes:{},subjectGoals:[], files:[], folders:[]};
 
 /* --------------------------------------------------
    SETTINGS
@@ -1969,7 +1946,7 @@ const TAB_TITLES = {
   agenda:   '<span>Agenda</span> — Calendrier & Tâches',
   outils:   '<span>Outils</span> — Pomodoro, Sons & Notes',
   stats:    '<span>Analyse</span> — Statistiques détaillées',
-  fichiers: '<span>Fichiers</span> — Documents & PDFs'
+  fichiers: '<span>Fichiers</span> — Explorateur de documents'
 };
 function updateBottomNav(n){
   document.querySelectorAll('.bottom-nav-btn').forEach(b=>b.classList.remove('active'));
@@ -1985,6 +1962,7 @@ function switchTab(n, el){
   const tb=document.getElementById('topbar-title');
   if(tb) tb.innerHTML=TAB_TITLES[n]||'';
   if(n==='stats') renderStats();
+  if(n==='fichiers') renderExplorer();
 }
 function updateClock(){
   const n=new Date();
@@ -2080,7 +2058,7 @@ function tickSession(){
     document.getElementById('break-warning').style.display='block';
     showToast('☕ Tu travailles depuis '+fmtHM(sessionElapsed)+'. Pense à faire une pause !','amber');
   }
-  // Auto-log (if enabled)
+  // Auto-log
   if(settings.autoLog && sessionElapsed>0 && sessionElapsed%600===0){
     const subject=document.getElementById('session-subject').value.trim();
     const note=document.getElementById('session-note').value.trim();
@@ -2191,7 +2169,7 @@ function applyTemplate(i){
 }
 
 /* --------------------------------------------------
-   POMODORO
+   POMODORO INTELLIGENT
 /* ------------------------------ */
 let pomSettings={work:25,short:5,long:15};
 let pomState={
@@ -2273,7 +2251,7 @@ function tickPomodoro(){
       pomState.cyclesCompleted++;
       const isLong=(pomState.cyclesCompleted%POM_CYCLES===0);
       pomState.type=isLong?'long':'short';
-      showToast('🎉 Pomodoro terminé ! -> '+( isLong?'Grande pause ('+pomSettings.long+' min)':'Pause ('+pomSettings.short+' min)'));
+      showToast('🎉 Terminé ! -> '+( isLong?'Grande pause':'Pause'));
     }else{
       pomState.type='work';
       showToast('▶ Reprise du travail — nouveau Pomodoro !');
@@ -2287,6 +2265,16 @@ function tickPomodoro(){
 }
 
 function resetPomodoro(){
+  // Auto-log si on reset en plein milieu d'une session de travail
+  if(pomState.type === 'work' && pomState.elapsed >= 10){
+    const remaining = pomState.elapsed - pomState.autoLoggedSecs;
+    if (remaining > 0) {
+      const sub = document.getElementById('pom-subject').value.trim() || 'Pomodoro';
+      state.log.unshift({date:localDate(), seconds:remaining, pauseSeconds:0, note:'🍅 Pomodoro (annulé)', subject:sub});
+      save(); renderLog(); updateGoalProgress(); renderRecap(); renderHistCalendar();
+    }
+  }
+
   pomState.active=false; clearInterval(pomState.interval);
   pomState.elapsed=0; pomState.type='work'; pomState.cyclesCompleted=0;
   pomState.autoLoggedSecs=0;
@@ -2304,7 +2292,7 @@ function skipPomodoro(){
     const sub = document.getElementById('pom-subject').value.trim() || 'Pomodoro';
     const alreadyLogged = pomState.autoLoggedSecs || 0;
     const remaining = pomState.elapsed - alreadyLogged;
-    if (remaining >= 10) { // On enregistre si au moins 10 secondes travaillées
+    if (remaining >= 10) { 
       state.log.unshift({date:localDate(), seconds:remaining, pauseSeconds:0, note:'🍅 Pomodoro (écourté)', subject:sub});
       save(); renderLog(); updateGoalProgress(); renderRecap(); renderHistCalendar();
     }
@@ -2569,7 +2557,6 @@ function stopAndLogTimer(id){
     t.running=false;t.startedAt=null;clearInterval(timerIntervals[id]);delete timerIntervals[id];
   }
   if(t.elapsed<10){showToast('⚠ Trop court','red');return;}
-  // Enregistrer tout ce qui n'a pas encore été auto-logué
   const alreadyLogged = t.autoLoggedSecs || 0;
   const remaining = t.elapsed - alreadyLogged;
   if(remaining > 0) state.log.unshift({date:localDate(),seconds:remaining,pauseSeconds:0,note:'Stop : '+t.name,subject:t.matiere||''});
@@ -2719,8 +2706,8 @@ function updateStats(){
   document.getElementById('stat-avg').textContent=fmtHM(avg);
   const streak=calcStreak();
   const se=document.getElementById('stat-streak');
-  se.textContent=streak;se.style.color=streak>=7?'var(--amber)':streak>=3?'var(--sage)':'var(--text)';
-  se.style.textShadow=streak>=7?'0 0 15px rgba(184,136,58,.4)':'none';
+  if(se){se.textContent=streak;se.style.color=streak>=7?'var(--amber)':streak>=3?'var(--sage)':'var(--text)';
+  se.style.textShadow=streak>=7?'0 0 15px rgba(184,136,58,.4)':'none';}
   const days=['L','M','M','J','V','S','D'],gs=state.goal*3600;
   let html='';
   for(let i=0;i<7;i++){
@@ -2738,7 +2725,8 @@ function updateStats(){
       <div style="font-family:var(--mono);font-size:.58rem;color:${isT?'var(--indigo)':'var(--text3)'};font-weight:${isT?'600':'400'}">${days[i]}</div>
     </div>`;
   }
-  document.getElementById('weekly-stats').innerHTML=html;
+  const wsEl = document.getElementById('weekly-stats');
+  if(wsEl) wsEl.innerHTML=html;
 }
 
 /* --------------------------------------------------
@@ -2991,9 +2979,12 @@ function openGoalsModal(){renderDailyGoalsForm();document.getElementById('goals-
 function saveDailyGoals(){
   if(!state.dailyGoals)state.dailyGoals=Array(7).fill(null);
   for(let i=0;i<7;i++){const v=parseFloat(document.getElementById('dg-'+i)?.value);state.dailyGoals[i]=isNaN(v)?state.goal:v;}
-  save();updateGoalProgress();renderRecap();document.getElementById('goals-modal').classList.remove('open');showToast('✓ Objectifs sauvegardés');
+  save(); updateGoalProgress(); renderRecap(); document.getElementById('goals-modal').classList.remove('open');showToast('✓ Objectifs sauvegardés');
 }
-function resetDailyGoals(){state.dailyGoals=Array(7).fill(null);renderDailyGoalsForm();save();updateGoalProgress();renderRecap();showToast('✓ Remis par défaut');}
+function resetDailyGoals(){
+  state.dailyGoals=Array(7).fill(null);
+  renderDailyGoalsForm(); save(); updateGoalProgress(); renderRecap(); showToast('✓ Remis par défaut');
+}
 
 /* --------------------------------------------------
    STATS TAB
@@ -3090,84 +3081,55 @@ function renderStatLog(logs){
 }
 
 /* --------------------------------------------------
-   TOAST
-/* ------------------------------ */
-function showToast(msg,type){
-  const t=document.getElementById('toast');t.textContent=msg;
-  const c=type==='red'?'var(--rose)':type==='amber'?'var(--amber)':'var(--sage)';
-  t.style.borderColor=c;t.style.color=c;
-  t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3200);
-}
-
-/* --------------------------------------------------
-   FICHIERS — Firebase Storage
-/* ------------------------------ */
-let storage = null;
-let userFiles = []; // cache local
-
-function initStorage(){
-  if(!storage && currentUser) storage = firebase.storage();
-}
+   EXPLORATEUR DE FICHIERS & FIREBASE STORAGE
+/* -------------------------------------------------- */
 
 function getFileIcon(name){
   const ext = name.split('.').pop().toLowerCase();
   if(['pdf'].includes(ext)) return '📄';
   if(['png','jpg','jpeg','gif','webp'].includes(ext)) return '🖼️';
   if(['doc','docx'].includes(ext)) return '📝';
-  if(['xls','xlsx'].includes(ext)) return '📊';
+  if(['xls','xlsx','csv'].includes(ext)) return '📊';
   if(['ppt','pptx'].includes(ext)) return '📽️';
+  if(['zip','tar','rar','7z','gz'].includes(ext)) return '📦';
   return '📎';
 }
 
 function formatFileSize(bytes){
-  if(bytes < 1024) return bytes+'B';
-  if(bytes < 1024*1024) return (bytes/1024).toFixed(1)+'KB';
-  return (bytes/(1024*1024)).toFixed(2)+'MB';
+  if(bytes < 1024) return bytes+' B';
+  if(bytes < 1024*1024) return (bytes/1024).toFixed(1)+' KB';
+  return (bytes/(1024*1024)).toFixed(2)+' MB';
 }
 
-function handleDrop(e){
-  e.preventDefault();
-  document.getElementById('drop-zone').classList.remove('dragover');
-  const files = Array.from(e.dataTransfer.files);
-  uploadFiles(files);
-}
-
-function handleFileSelect(e){
-  const files = Array.from(e.target.files);
-  uploadFiles(files);
-  e.target.value='';
-}
+// Upload Events
+function handleDrop(e){ e.preventDefault(); document.getElementById('drop-zone').classList.remove('dragover'); uploadFiles(Array.from(e.dataTransfer.files)); }
+function handleFileSelect(e){ uploadFiles(Array.from(e.target.files)); e.target.value=''; }
 
 function uploadFiles(files){
   if(!currentUser){ showToast('⚠ Connecte-toi d\'abord','red'); return; }
-  initStorage();
-  const matiere = document.getElementById('upload-matiere').value.trim();
-  const desc = document.getElementById('upload-desc').value.trim();
-
+  
   files.forEach(file => {
-    if(file.size > 50*1024*1024){ showToast('⚠ '+file.name+' dépasse 50MB','red'); return; }
-
     const fileId = Date.now().toString() + '_' + Math.random().toString(36).slice(2);
     const path = `users/${currentUser.uid}/${fileId}_${file.name}`;
     const ref = storage.ref(path);
 
-    // Show progress
+    // Progress UI
     const progId = 'prog_'+fileId;
     const uploadEl = document.createElement('div');
     uploadEl.id = progId;
-    uploadEl.innerHTML = `<div class="file-item">
-      <div class="file-icon">${getFileIcon(file.name)}</div>
-      <div style="flex:1">
-        <div class="file-name">${file.name}</div>
-        <div class="file-progress"><div class="file-progress-bar" id="bar_${fileId}" style="width:0%"></div></div>
-        <div class="file-meta" id="pct_${fileId}">Démarrage...</div>
-      </div>
-    </div>`;
+    uploadEl.innerHTML = `
+      <div style="background:var(--surface2); padding:10px; border-radius:var(--r-sm); border:1px solid var(--border); font-size:0.8rem; font-family:var(--body);">
+        <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+          <span style="color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${file.name}</span> 
+          <span id="pct_${fileId}" style="color:var(--teal); font-family:var(--mono);">0%</span>
+        </div>
+        <div style="height:4px; background:var(--surface3); border-radius:2px; overflow:hidden;">
+          <div id="bar_${fileId}" style="height:100%; width:0%; background:var(--indigo); transition:width 0.2s;"></div>
+        </div>
+      </div>`;
     document.getElementById('upload-list').appendChild(uploadEl);
 
-    const uploadTask = ref.put(file, {
-      customMetadata: { matiere, desc, originalName: file.name, uploadedAt: new Date().toISOString() }
-    });
+    const uploadTask = ref.put(file);
 
     uploadTask.on('state_changed',
       snap => {
@@ -3175,117 +3137,129 @@ function uploadFiles(files){
         const barEl = document.getElementById('bar_'+fileId);
         const pctEl = document.getElementById('pct_'+fileId);
         if(barEl) barEl.style.width = pct+'%';
-        if(pctEl) pctEl.textContent = pct+'% — '+formatFileSize(snap.bytesTransferred)+' / '+formatFileSize(snap.totalBytes);
+        if(pctEl) pctEl.textContent = pct+'%';
       },
       err => {
-        const progEl = document.getElementById(progId);
-        if(progEl) progEl.remove();
+        document.getElementById(progId)?.remove();
         showToast('❌ Erreur upload : '+file.name,'red');
-        console.error(err);
       },
       async () => {
         const url = await uploadTask.snapshot.ref.getDownloadURL();
-        const meta = await uploadTask.snapshot.ref.getMetadata();
-
-        // Save metadata to Firestore
-        if(!state.files) state.files = [];
         state.files.unshift({
           id: fileId,
           name: file.name,
           path,
           url,
           size: file.size,
-          type: file.type,
-          matiere,
-          desc,
+          parentId: currentFolderId, // Assigne au dossier courant
           uploadedAt: new Date().toISOString()
         });
         save();
-
-        const progEl = document.getElementById(progId);
-        if(progEl) progEl.remove();
-
-        renderFiles();
-        updateStorageUsage();
-        showToast('✅ '+file.name+' uploadé !');
+        document.getElementById(progId)?.remove();
+        renderExplorer(); updateStorageUsage();
+        showToast('✅ '+file.name+' ajouté');
       }
     );
   });
 }
 
-function renderFiles(){
-  const list = document.getElementById('file-list');
-  if(!state.files || !state.files.length){
-    list.innerHTML = '<div class="empty-log" style="padding:40px 0">Aucun fichier — glisse un fichier dans la zone ci-dessus !</div>';
+// Explorer Navigation & Rendering
+function createFolder(){
+  const name = prompt("Nom du nouveau dossier :");
+  if(!name || !name.trim()) return;
+  state.folders.push({
+    id: 'fld_' + Date.now(),
+    name: name.trim(),
+    parentId: currentFolderId,
+    createdAt: new Date().toISOString()
+  });
+  save(); renderExplorer(); showToast("Dossier créé");
+}
+
+function openFolder(id){ currentFolderId = id; renderExplorer(); }
+
+function deleteFolder(id){
+  const hasFiles = state.files.some(f => f.parentId === id);
+  const hasSub = state.folders.some(f => f.parentId === id);
+  if(hasFiles || hasSub) {
+    showToast('⚠ Le dossier doit être vide pour être supprimé', 'red');
+    return;
+  }
+  if(confirm('Supprimer ce dossier ?')) {
+    state.folders = state.folders.filter(f => f.id !== id);
+    save(); renderExplorer(); showToast("Dossier supprimé");
+  }
+}
+
+async function deleteFile(id, path){
+  if(!confirm('Supprimer ce fichier définitivement ?')) return;
+  try { await storage.ref(path).delete(); } catch(e){ }
+  state.files = state.files.filter(f=>f.id!==id);
+  save(); renderExplorer(); updateStorageUsage(); showToast("Fichier supprimé");
+}
+
+function renderExplorer(){
+  // 1. Breadcrumbs
+  let pathHTML = `<span class="bc-link" onclick="openFolder(null)">🏠 Accueil</span>`;
+  let pathArr = [];
+  let curr = currentFolderId;
+  while(curr){
+    const f = state.folders.find(x => x.id === curr);
+    if(f) { pathArr.unshift(f); curr = f.parentId; } else break;
+  }
+  pathArr.forEach(f => {
+    pathHTML += ` <span class="bc-sep">/</span> <span class="bc-link" onclick="openFolder('${f.id}')">${f.name}</span>`;
+  });
+  document.getElementById('explorer-breadcrumbs').innerHTML = pathHTML;
+
+  // 2. Grid items
+  const grid = document.getElementById('explorer-grid');
+  const currentFolders = state.folders.filter(f => f.parentId === currentFolderId).sort((a,b)=>a.name.localeCompare(b.name));
+  const currentFiles = state.files.filter(f => f.parentId === currentFolderId).sort((a,b)=>b.uploadedAt.localeCompare(a.uploadedAt));
+
+  if(!currentFolders.length && !currentFiles.length){
+    grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--text3); font-family:var(--mono);">Dossier vide. Uploadez ou créez un dossier.</div>`;
     return;
   }
 
-  // Update matière filter options
-  const filterSel = document.getElementById('file-filter-matiere');
-  if(filterSel){
-    const currentFilter = filterSel.value;
-    const matieres = [...new Set(state.files.map(f=>f.matiere).filter(Boolean))];
-    filterSel.innerHTML = '<option value="">Toutes les matières</option>' +
-      matieres.map(m=>'<option value="'+m+'" '+(m===currentFilter?'selected':'')+'>'+m+'</option>').join('');
-  }
+  let html = '';
+  
+  // Render Folders
+  currentFolders.forEach(f => {
+    html += `
+      <div class="explorer-item folder" onclick="openFolder('${f.id}')">
+        <div class="ex-icon">📁</div>
+        <div class="ex-name" title="${f.name}">${f.name}</div>
+        <div class="ex-actions">
+           <button class="icon-btn del" title="Supprimer le dossier" onclick="event.stopPropagation(); deleteFolder('${f.id}')">✕</button>
+        </div>
+      </div>
+    `;
+  });
 
-  // Filter & sort
-  let files = [...state.files];
-  const currentFilter = filterSel ? filterSel.value : '';
-  if(currentFilter) files = files.filter(f=>f.matiere===currentFilter);
-  const sortEl = document.getElementById('file-sort');
-  const sort = sortEl ? sortEl.value : 'date';
-  if(sort==='name') files.sort((a,b)=>a.name.localeCompare(b.name));
-  else if(sort==='size') files.sort((a,b)=>b.size-a.size);
-  else files.sort((a,b)=>b.uploadedAt.localeCompare(a.uploadedAt));
-
-  // Update count
-  const countEl = document.getElementById('files-count');
-  if(countEl) countEl.textContent = '('+files.length+')';
-
-  // Update summary stats
-  const statsEl = document.getElementById('files-stats');
-  if(statsEl && state.files.length){
-    const byType = {};
-    state.files.forEach(f => {
-      const ext = f.name.split('.').pop().toLowerCase();
-      const type = ['pdf'].includes(ext)?'PDF':['png','jpg','jpeg','gif','webp'].includes(ext)?'Images':['doc','docx'].includes(ext)?'Word':['xls','xlsx'].includes(ext)?'Excel':'Autres';
-      byType[type] = (byType[type]||0)+1;
-    });
-    statsEl.innerHTML = Object.entries(byType).map(([type,count])=>
-      '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:.72rem">'
-      +'<span style="color:var(--text2)">'+type+'</span>'
-      +'<span style="color:var(--text)">'+count+' fichier'+(count>1?'s':'')+'</span></div>'
-    ).join('') + '<div style="display:flex;justify-content:space-between;padding:6px 0;font-family:var(--mono);font-size:.72rem;margin-top:2px">'
-      +'<span style="color:var(--text3)">Total</span>'
-      +'<span style="color:var(--amber);font-weight:600">'+state.files.length+' fichier'+(state.files.length>1?'s':'')+'</span></div>';
-  }
-
-  list.innerHTML = files.map(f => {
-    const date = new Date(f.uploadedAt).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'});
+  // Render Files
+  currentFiles.forEach(f => {
     const isPdf = f.name.toLowerCase().endsWith('.pdf');
     const isImg = /\.(png|jpg|jpeg|gif|webp)$/i.test(f.name);
     const nameEsc = f.name.replace(/'/g,"\\'");
     const pathEsc = f.path.replace(/'/g,"\\'");
-    const pdfBtn = isPdf ? '<button class="btn btn-teal" style="font-size:.75rem;padding:5px 12px" onclick="openPdf(\''+f.url+'\',\''+nameEsc+'\')">👁 Aperçu</button>' : '';
-    const imgBtn = isImg ? '<button class="btn btn-teal" style="font-size:.75rem;padding:5px 12px" onclick="window.open(\''+f.url+'\',\'_blank\')">🖼 Voir</button>' : '';
-    const mb = f.matiere ? '<span class="mb">'+f.matiere+'</span>' : '';
-    const desc = f.desc ? '<span style="color:var(--text2)">'+f.desc+'</span>' : '';
-    const color = getColor(f.matiere||'');
 
-    return '<div class="file-item" style="border-left:3px solid '+color+'">'
-      + '<div class="file-icon">'+getFileIcon(f.name)+'</div>'
-      + '<div style="flex:1;min-width:0">'
-      +   '<div class="file-name">'+f.name+'</div>'
-      +   '<div class="file-meta">'+mb+' <span>'+formatFileSize(f.size)+'</span> <span>'+date+'</span>'+desc+'</div>'
-      + '</div>'
-      + '<div style="display:flex;gap:5px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end">'
-      +   pdfBtn + imgBtn
-      +   '<a href="'+f.url+'" target="_blank" download="'+f.name+'" class="btn btn-muted" style="font-size:.75rem;padding:5px 12px">⬇</a>'
-      +   '<button class="icon-btn del" onclick="deleteFile(\''+f.id+'\',\''+pathEsc+'\')">✕</button>'
-      + '</div>'
-      + '</div>';
-  }).join('');
+    html += `
+      <div class="explorer-item file">
+        <div class="ex-icon">${getFileIcon(f.name)}</div>
+        <div class="ex-name" title="${f.name}">${f.name}</div>
+        <div class="ex-meta">${formatFileSize(f.size)}</div>
+        <div class="ex-actions">
+           ${isPdf ? `<button class="icon-btn" title="Aperçu" onclick="openPdf('${f.url}','${nameEsc}')">👁</button>` : ''}
+           ${isImg ? `<button class="icon-btn" title="Aperçu" onclick="window.open('${f.url}','_blank')">👁</button>` : ''}
+           <a href="${f.url}" download="${f.name}" target="_blank" class="icon-btn" title="Télécharger">⬇</a>
+           <button class="icon-btn del" title="Supprimer le fichier" onclick="deleteFile('${f.id}','${pathEsc}')">✕</button>
+        </div>
+      </div>
+    `;
+  });
+
+  grid.innerHTML = html;
 }
 
 function openPdf(url, name){
@@ -3295,31 +3269,17 @@ function openPdf(url, name){
   document.getElementById('pdf-download-btn').download = name;
   document.getElementById('pdf-modal').classList.add('open');
 }
-
-function openImg(url, name){
-  window.open(url, '_blank');
-}
-
 function closePdfModal(){
   document.getElementById('pdf-modal').classList.remove('open');
   document.getElementById('pdf-iframe').src = '';
 }
 
-async function deleteFile(id, path){
-  if(!confirm('Supprimer ce fichier définitivement ?')) return;
-  initStorage();
-  try {
-    await storage.ref(path).delete();
-  } catch(e){ console.warn('Storage delete:', e); }
-  state.files = (state.files||[]).filter(f=>f.id!==id);
-  save(); renderFiles(); updateStorageUsage();
-  showToast('✓ Fichier supprimé');
-}
-
+// Storage stats
 async function updateStorageUsage(){
   if(!state.files || !state.files.length){
     document.getElementById('storage-text').textContent = '0 MB / 2.5 GB';
     document.getElementById('storage-bar').style.width = '0%';
+    document.getElementById('files-stats').innerHTML = '<span class="empty-log">Aucun fichier</span>';
     return;
   }
   const totalBytes = state.files.reduce((a,f)=>a+(f.size||0),0);
@@ -3328,8 +3288,28 @@ async function updateStorageUsage(){
   document.getElementById('storage-text').textContent = totalMB.toFixed(1)+' MB / 2 500 MB';
   document.getElementById('storage-bar').style.width = pct+'%';
   document.getElementById('storage-bar').style.background = pct>80?'var(--rose)':pct>60?'var(--amber)':'linear-gradient(90deg, var(--indigo), var(--teal))';
+
+  // Repartition by Type
+  const byType = {};
+  state.files.forEach(f => {
+    const ext = f.name.split('.').pop().toLowerCase();
+    const type = ['pdf'].includes(ext)?'PDF' : ['png','jpg','jpeg','gif','webp'].includes(ext)?'Images' : ['doc','docx'].includes(ext)?'Word' : ['xls','xlsx','csv'].includes(ext)?'Excel' : ['zip','tar','rar','7z','gz'].includes(ext)?'Archives' : 'Autres';
+    byType[type] = (byType[type]||0)+1;
+  });
+  
+  document.getElementById('files-stats').innerHTML = Object.entries(byType).map(([type,count])=>
+    `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:.7rem;">
+      <span style="color:var(--text2)">${type}</span><span style="color:var(--text)">${count} fichier(s)</span>
+    </div>`
+  ).join('') + 
+  `<div style="display:flex;justify-content:space-between;padding:4px 0;font-family:var(--mono);font-size:.7rem;margin-top:4px;">
+    <span style="color:var(--text3)">Total</span><span style="color:var(--amber);font-weight:600">${state.files.length} fichier(s)</span>
+  </div>`;
 }
 
+/* --------------------------------------------------
+   HISTORIQUE CALENDRIER
+/* -------------------------------------------------- */
 let histDate = new Date();
 let histSelectedDay = null;
 
@@ -3340,11 +3320,9 @@ function renderHistCalendar(){
   const y = histDate.getFullYear(), m = histDate.getMonth();
   document.getElementById('hist-month-label').textContent = MFR[m] + ' ' + y;
 
-  // Build daily totals
   const byDay = {};
   state.log.forEach(e => { byDay[e.date] = (byDay[e.date]||0) + e.seconds; });
 
-  // Max for the month (for bar scaling)
   const today = localDate();
   const fd = new Date(y, m, 1).getDay(), off = fd===0?6:fd-1;
   const dim = new Date(y, m+1, 0).getDate();
@@ -3358,7 +3336,6 @@ function renderHistCalendar(){
   const grid = document.getElementById('hist-cal-grid');
   let html = DFR.map(d=>`<div style="font-family:var(--mono);font-size:.58rem;color:var(--text3);text-align:center;padding:3px 0;text-transform:uppercase;letter-spacing:1px">${d}</div>`).join('');
 
-  // Empty cells
   for(let i=0;i<off;i++) html += `<div class="hist-day empty"><div class="hist-day-num"></div></div>`;
 
   for(let d=1;d<=dim;d++){
@@ -3383,8 +3360,6 @@ function renderHistCalendar(){
     </div>`;
   }
   grid.innerHTML = html;
-
-  // Re-render detail if a day is selected
   if(histSelectedDay) renderHistDayDetail(histSelectedDay);
 }
 
@@ -3438,7 +3413,6 @@ document.addEventListener('visibilitychange', ()=>{
     // Recalculer le temps écoulé réel pour la session
     if(sessionRunning && sessionStart){
       const newElapsed = Math.floor((Date.now() - sessionStart) / 1000);
-      // Auto-log les tranches de 10min manquées
       if(settings.autoLog){
         const oldTranches = Math.floor(sessionElapsed / 600);
         const newTranches = Math.floor(newElapsed / 600);
@@ -3494,10 +3468,6 @@ setInterval(()=>{
   }
 },20*60*1000);
 
-/* --------------------------------------------------
-   INIT
-/* ------------------------------ */
-// Auth state change handles everything — see auth.onAuthStateChanged above
 </script>
 </body>
 </html>
