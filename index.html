@@ -6,9 +6,9 @@
 <title>Thomas \u2014 Journal de bord</title>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-/* ===========================================
+/* -------------------------------------------
    DESIGN TOKENS \u2014 Thème Chaud (défaut, doux pour les yeux)
-=========================================== */
+/* ------------------------------ */
 :root {
   --bg:       #0F111A;
   --sidebar:  #0C0E16;
@@ -53,9 +53,9 @@
 
 /* single theme \u2014 no switcher needed */
 
-/* =======================================
+/* ---------------------------------------
    RESET & BASE
-======================================= */
+/* ------------------------------ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; }
 body {
@@ -68,9 +68,9 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* =======================================
+/* ---------------------------------------
    SIDEBAR
-======================================= */
+/* ------------------------------ */
 .sidebar {
   width: var(--sw);
   height: 100vh;
@@ -186,9 +186,9 @@ body {
 }
 .foot-btns { display: flex; gap: 5px; margin-top: 10px; }
 
-/* =======================================
+/* ---------------------------------------
    MAIN WRAPPER
-======================================= */
+/* ------------------------------ */
 .main-wrap {
   flex: 1;
   display: flex;
@@ -245,16 +245,16 @@ body {
 .main-scroll::-webkit-scrollbar { width: 4px; }
 .main-scroll::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
 
-/* =======================================
+/* ---------------------------------------
    TAB PANELS
-======================================= */
+/* ------------------------------ */
 .tab-panel { display: none; }
 .tab-panel.active { display: block; animation: tabIn .28s cubic-bezier(.4,0,.2,1) forwards; }
 @keyframes tabIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
 
-/* =======================================
+/* ---------------------------------------
    LAYOUT GRID
-======================================= */
+/* ------------------------------ */
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .col-full { grid-column: 1/-1; }
 .col-1 { grid-column: 1/2; }
@@ -262,9 +262,9 @@ body {
 .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
 .grid-5 { display: grid; grid-template-columns: repeat(5,1fr); gap: 14px; }
 
-/* =======================================
+/* ---------------------------------------
    CARDS
-======================================= */
+/* ------------------------------ */
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -307,9 +307,9 @@ body {
   margin-bottom: 16px;
 }
 
-/* =======================================
+/* ---------------------------------------
    BUTTONS
-======================================= */
+/* ------------------------------ */
 .btn {
   font-family: var(--body);
   font-size: .82rem;
@@ -345,9 +345,9 @@ body {
 .btn-sage:hover { filter: brightness(1.12); }
 .btn-row { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
 
-/* =======================================
+/* ---------------------------------------
    INPUTS
-======================================= */
+/* ------------------------------ */
 .input-field {
   background: var(--surface3);
   border: 1px solid var(--border);
@@ -368,9 +368,9 @@ body {
 select.input-field { appearance: none; cursor: pointer; }
 textarea.input-field { resize: vertical; }
 
-/* =======================================
+/* ---------------------------------------
    ICON BUTTONS
-======================================= */
+/* ------------------------------ */
 .icon-btn {
   background: none;
   border: 1px solid var(--border);
@@ -386,9 +386,9 @@ textarea.input-field { resize: vertical; }
 .icon-btn.del { border-color: var(--border); color: var(--rose); }
 .icon-btn.del:hover { background: var(--rose); color: #1a0808; border-color: var(--rose); }
 
-/* =======================================
+/* ---------------------------------------
    SESSION TIMER
-======================================= */
+/* ------------------------------ */
 .big-timer {
   font-family: var(--display);
   font-size: 5.5rem;
@@ -420,9 +420,9 @@ textarea.input-field { resize: vertical; }
   color: var(--teal);
 }
 
-/* =======================================
+/* ---------------------------------------
    GOAL CARD
-======================================= */
+/* ------------------------------ */
 .goal-number {
   font-family: var(--display);
   font-size: 4rem;
@@ -488,9 +488,9 @@ textarea.input-field { resize: vertical; }
   margin-top: 2px;
 }
 
-/* =======================================
+/* ---------------------------------------
    TIMERS
-======================================= */
+/* ------------------------------ */
 .timer-list { display: flex; flex-direction: column; gap: 10px; }
 .timer-item {
   background: var(--surface2);
@@ -502,9 +502,9 @@ textarea.input-field { resize: vertical; }
 .timer-item.active { border-color: rgba(110,148,112,.35); background: rgba(110,148,112,.03); }
 .timer-item.done   { border-color: rgba(184,136,58,.25); opacity: .65; }
 
-/* =======================================
+/* ---------------------------------------
    LOG
-======================================= */
+/* ------------------------------ */
 .log-list { max-height: 250px; overflow-y: auto; padding-right: 4px; }
 .log-list::-webkit-scrollbar { width: 3px; }
 .log-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
@@ -517,9 +517,9 @@ textarea.input-field { resize: vertical; }
 .del-btn { background: none; border: none; color: var(--text3); cursor: pointer; font-size: .7rem; padding: 2px 5px; border-radius: 4px; transition: color .15s; }
 .del-btn:hover { color: var(--rose); }
 
-/* =======================================
+/* ---------------------------------------
    BADGES
-======================================= */
+/* ------------------------------ */
 .mb {
   background: var(--indigo-d);
   border: 1px solid var(--indigo-b);
@@ -531,9 +531,9 @@ textarea.input-field { resize: vertical; }
   font-family: var(--mono);
 }
 
-/* =======================================
+/* ---------------------------------------
    CALENDAR
-======================================= */
+/* ------------------------------ */
 .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
 .cal-month { font-family: var(--display); font-size: 1.4rem; font-style: italic; color: var(--text); letter-spacing: .3px; }
 .cal-nav { background: var(--surface2); border: 1px solid var(--border); color: var(--text2); border-radius: 7px; padding: 5px 12px; cursor: pointer; font-size: .9rem; transition: all .15s; }
@@ -548,9 +548,9 @@ textarea.input-field { resize: vertical; }
 .cal-day.today .cal-day-num { color: var(--amber); font-weight: 700; }
 .cal-evt { font-size: .56rem; padding: 1px 4px; border-radius: 3px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; color: #fff; }
 
-/* =======================================
+/* ---------------------------------------
    MODALS
-======================================= */
+/* ------------------------------ */
 .modal-overlay {
   display: none;
   position: fixed;
@@ -581,9 +581,9 @@ textarea.input-field { resize: vertical; }
 .form-row { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
 .form-label { font-family: var(--mono); font-size: .62rem; color: var(--text2); letter-spacing: 1.5px; text-transform: uppercase; }
 
-/* =======================================
+/* ---------------------------------------
    TODOS
-======================================= */
+/* ------------------------------ */
 .todo-list { display: flex; flex-direction: column; gap: 5px; max-height: 340px; overflow-y: auto; padding-right: 4px; }
 .todo-list::-webkit-scrollbar { width: 3px; }
 .todo-list::-webkit-scrollbar-thumb { background: var(--border2); }
@@ -597,9 +597,9 @@ textarea.input-field { resize: vertical; }
 .p-med  { background: var(--amber-d); color: var(--amber); border: 1px solid rgba(184,136,58,.25); border-radius: 4px; font-family: var(--mono); font-size: .58rem; padding: 2px 6px; }
 .p-low  { background: var(--green-d); color: var(--sage); border: 1px solid rgba(110,148,112,.25); border-radius: 4px; font-family: var(--mono); font-size: .58rem; padding: 2px 6px; }
 
-/* =======================================
+/* ---------------------------------------
    DAY VIEW
-======================================= */
+/* ------------------------------ */
 .day-hour-row { display: flex; align-items: flex-start; min-height: 50px; border-bottom: 1px solid var(--border); position: relative; }
 .day-hour-row:hover { background: rgba(106,120,168,.02); cursor: pointer; }
 .day-hour-label { width: 50px; flex-shrink: 0; font-family: var(--mono); font-size: .6rem; color: var(--text3); padding: 5px 7px 0; text-align: right; user-select: none; }
@@ -610,9 +610,9 @@ textarea.input-field { resize: vertical; }
 .day-now-line { position: absolute; left: 50px; right: 0; height: 1.5px; background: var(--rose); z-index: 10; pointer-events: none; }
 .day-now-dot  { position: absolute; left: 44px; width: 7px; height: 7px; background: var(--rose); border-radius: 50%; z-index: 11; transform: translateY(-3px); pointer-events: none; }
 
-/* =======================================
+/* ---------------------------------------
    POMODORO
-======================================= */
+/* ------------------------------ */
 .pom-display {
   font-family: var(--display);
   font-size: 5.5rem;
@@ -710,9 +710,9 @@ textarea.input-field { resize: vertical; }
 .pom-num-btn:hover { border-color: var(--border2); color: var(--text); }
 .pom-num-val { font-family: var(--mono); font-size: .85rem; color: var(--text); min-width: 36px; text-align: center; }
 
-/* =======================================
+/* ---------------------------------------
    SONS AMBIANTS
-======================================= */
+/* ------------------------------ */
 .sound-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; }
 .sound-btn {
   background: var(--surface2);
@@ -753,9 +753,9 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
   box-shadow: 0 0 6px rgba(84,132,128,.4);
 }
 
-/* =======================================
+/* ---------------------------------------
    NOTES DU JOUR
-======================================= */
+/* ------------------------------ */
 .notes-date-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
 .notes-date-label { font-family: var(--mono); font-size: .72rem; color: var(--text2); flex: 1; text-align: center; }
 .notes-prev-entries {
@@ -775,9 +775,9 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
 .notes-entry-date { font-family: var(--mono); font-size: .62rem; color: var(--text3); margin-bottom: 4px; }
 .notes-entry-text { font-size: .82rem; color: var(--text2); line-height: 1.5; }
 
-/* =======================================
+/* ---------------------------------------
    SUBJECT GOALS
-======================================= */
+/* ------------------------------ */
 .subject-goal-row {
   display: flex;
   align-items: center;
@@ -791,9 +791,9 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
 .subject-goal-bar { height: 100%; border-radius: 100px; transition: width .5s; }
 .subject-goal-pct { font-family: var(--mono); font-size: .68rem; color: var(--text2); min-width: 40px; text-align: right; }
 
-/* =======================================
+/* ---------------------------------------
    QUICK TEMPLATES
-======================================= */
+/* ------------------------------ */
 .template-grid { display: flex; flex-wrap: wrap; gap: 6px; }
 .template-btn {
   background: var(--surface2);
@@ -811,9 +811,9 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
 }
 .template-btn:hover { border-color: var(--border2); color: var(--text); background: var(--surface3); }
 
-/* =======================================
+/* ---------------------------------------
    BREAK REMINDER
-======================================= */
+/* ------------------------------ */
 .toggle-row {
   display: flex;
   align-items: center;
@@ -854,9 +854,9 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
 
 
 
-/* =======================================
+/* ---------------------------------------
    TOAST
-======================================= */
+/* ------------------------------ */
 #toast {
   position: fixed;
   bottom: 24px; right: 24px;
@@ -879,9 +879,9 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
 
 
 
-/* =======================================
+/* ---------------------------------------
    FILTER PILLS
-======================================= */
+/* ------------------------------ */
 .filter-row {
   display: flex;
   gap: 3px;
@@ -907,9 +907,9 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
 .filter-pill.active, .filter-pill:hover { background: var(--surface3); color: var(--text); }
 .filter-pill.active { color: var(--indigo); }
 
-/* =======================================
+/* ---------------------------------------
    RESPONSIVE \u2014 TABLET (820px)
-======================================= */
+/* ------------------------------ */
 @media (max-width: 820px) {
   :root { --sw: 62px; }
 
@@ -940,9 +940,9 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
   .recap-bar { padding: 6px 14px; gap: 12px; font-size: .62rem; overflow-x: auto; }
 }
 
-/* =======================================
+/* ---------------------------------------
    RESPONSIVE \u2014 MOBILE (480px)
-======================================= */
+/* ------------------------------ */
 @media (max-width: 480px) {
   :root { --sw: 0px; }
 
@@ -1859,9 +1859,9 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
 <div id="toast"></div>
 
 <script>
-/* ==================================================
+/* --------------------------------------------------
    FIREBASE
-================================================== */
+/* ------------------------------ */
 const firebaseConfig={apiKey:"AIzaSyBcfsO77WBlZK5WKIAnfutphTXJbVLHsqA",authDomain:"worklog-thomas.firebaseapp.com",projectId:"worklog-thomas",storageBucket:"worklog-thomas.firebasestorage.app",messagingSenderId:"778800014971",appId:"1:778800014971:web:2419e8e3c92074f098a4de"};
 firebase.initializeApp(firebaseConfig);
 const db=firebase.firestore();
@@ -1869,7 +1869,7 @@ const auth=firebase.auth();
 let currentUser=null;
 let DOC_REF=null;
 
-/* == AUTH ========================================== */
+/* == AUTH ------------------------------ */
 function loginWithGoogle(){
   const provider=new firebase.auth.GoogleAuthProvider();
   auth.signInWithPopup(provider).catch(err=>{
@@ -1988,9 +1988,9 @@ async function loadFromFirestore(){
   renderFiles(); updateStorageUsage();
 }
 
-/* ==================================================
+/* --------------------------------------------------
    STATE
-================================================== */
+/* ------------------------------ */
 let state=JSON.parse(localStorage.getItem('worklog_state')||'null')||{goal:8,log:[],timers:[],events:[],todos:[],docs:[],notes:{},subjectGoals:[]};
 if(!state.events)state.events=[];
 if(!state.todos)state.todos=[];
@@ -1999,9 +1999,9 @@ if(!state.notes)state.notes={};
 if(!state.subjectGoals)state.subjectGoals=[];
 if(!state.dailyGoals)state.dailyGoals=Array(7).fill(null);
 
-/* ==================================================
+/* --------------------------------------------------
    SETTINGS
-================================================== */
+/* ------------------------------ */
 let settings = JSON.parse(localStorage.getItem('wt_settings')||'{}');
 settings = Object.assign({breakReminder:false, breakHours:2, autoLog:true, showRecap:true, theme:'warm', pomWork:25, pomShort:5, pomLong:15, templates:[{label:'📚 Cours',subject:'Cours',note:''},{label:'\u270F️ Révision',subject:'Révision',note:''},{label:'📝 Devoir',subject:'Devoir',note:''},{label:'🔬 Labo',subject:'Labo',note:''}]}, settings);
 
@@ -2032,9 +2032,9 @@ function toggleRecapBar(){
   document.getElementById('recap-bar').style.display = settings.showRecap ? '' : 'none';
 }
 
-/* ==================================================
+/* --------------------------------------------------
    CLOCK & NAVIGATION
-================================================== */
+/* ------------------------------ */
 const TAB_TITLES = {
   suivi:    '<span>Suivi</span> \u2014 Session de travail',
   agenda:   '<span>Agenda</span> \u2014 Calendrier & Tâches',
@@ -2064,16 +2064,16 @@ function updateClock(){
 }
 updateClock();setInterval(updateClock,1000);
 
-/* ==================================================
+/* --------------------------------------------------
    HELPERS
-================================================== */
+/* ------------------------------ */
 function fmtTime(s){const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;return[h,m,sec].map(v=>String(v).padStart(2,'0')).join(':');}
 function fmtHM(s){const h=Math.floor(s/3600),m=Math.floor((s%3600)/60);return h>0?`${h}h${m>0?m+'m':''}`:`${m}m`;}
 function localDate(d){const t=d||new Date();return`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;}
 
-/* ==================================================
+/* --------------------------------------------------
    RECAP BAR
-================================================== */
+/* ------------------------------ */
 function renderRecap(){
   const today=localDate();
   const pomExtra = (pomState && pomState.active && pomState.type==='work') ? pomState.elapsed : 0;
@@ -2089,9 +2089,9 @@ function renderRecap(){
   document.getElementById('recap-week').textContent  = fmtHM(weekSecs);
 }
 
-/* ==================================================
+/* --------------------------------------------------
    SESSION
-================================================== */
+/* ------------------------------ */
 let sessionRunning=false,sessionStart=null,sessionElapsed=0,sessionInterval=null;
 let pauseRunning=false,pauseStart=null,pauseElapsed=0,pauseInterval=null;
 let sessionAutoLogged=0;
@@ -2240,9 +2240,9 @@ function updateGoalProgress(){
   document.getElementById('progress-pct').textContent=tg===0?'Repos 😴':pct+'%';
 }
 
-/* ==================================================
+/* --------------------------------------------------
    TEMPLATES RAPIDES
-================================================== */
+/* ------------------------------ */
 function renderTemplates(){
   const container=document.getElementById('templates-container');
   if(!container) return;
@@ -2260,9 +2260,9 @@ function applyTemplate(i){
   showToast('\u25B6 Session '+t.subject+' démarrée');
 }
 
-/* ==================================================
+/* --------------------------------------------------
    POMODORO
-================================================== */
+/* ------------------------------ */
 let pomSettings={work:25,short:5,long:15};
 let pomState={
   active:false,
@@ -2383,9 +2383,9 @@ function renderPomCycles(){
 }
 renderPomCycles(); updatePomDisplay();
 
-/* ==================================================
+/* --------------------------------------------------
    SONS AMBIANTS
-================================================== */
+/* ------------------------------ */
 let audioCtx=null, soundSource=null, soundGain=null, currentSound=null;
 function initAudio(){
   if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)();
@@ -2438,9 +2438,9 @@ function toggleSound(type){
 }
 function setSoundVolume(v){if(soundGain) soundGain.gain.value=parseFloat(v);}
 
-/* ==================================================
+/* --------------------------------------------------
    NOTES DU JOUR
-================================================== */
+/* ------------------------------ */
 let notesDate=new Date();
 function noteGoToday(){ notesDate=new Date(); renderNotes(); }
 function changeNoteDate(d){ notesDate.setDate(notesDate.getDate()+d); renderNotes(); }
@@ -2474,9 +2474,9 @@ function renderNotes(){
   `).join('');
 }
 
-/* ==================================================
+/* --------------------------------------------------
    OBJECTIFS PAR MATIÈRE
-================================================== */
+/* ------------------------------ */
 const COLORS=['--sage','--amber','--teal','--lav','--rose','--sand'];
 function addSubjectGoal(){ document.getElementById('add-subject-form').style.display='flex'; }
 function saveSubjectGoal(){
@@ -2523,9 +2523,9 @@ function renderSubjectGoals(){
   }).join('');
 }
 
-/* ==================================================
+/* --------------------------------------------------
    SOUND - Alarm
-================================================== */
+/* ------------------------------ */
 function playAlarm(){
   try{
     const ctx=new(window.AudioContext||window.webkitAudioContext)();
@@ -2541,9 +2541,9 @@ function playAlarm(){
   }catch(e){}
 }
 
-/* ==================================================
+/* --------------------------------------------------
    TIMERS
-================================================== */
+/* ------------------------------ */
 function addTimer(){
   const name=document.getElementById('new-timer-name').value.trim();
   const matiere=document.getElementById('new-timer-matiere').value.trim();
@@ -2698,9 +2698,9 @@ function renderTimers(){
   state.timers.filter(t=>t.running).forEach(t=>{if(!timerIntervals[t.id])timerIntervals[t.id]=setInterval(()=>tickTimer(t.id),1000);});
 }
 
-/* ==================================================
+/* --------------------------------------------------
    LOG
-================================================== */
+/* ------------------------------ */
 function renderLog(){
   const list=document.getElementById('log-list');
   if(!state.log.length){list.innerHTML='<div class="empty-log">Aucune session</div>';updateStats();renderHistCalendar();return;}
@@ -2718,9 +2718,9 @@ function renderLog(){
 }
 function deleteLog(i){state.log.splice(i,1);save();renderLog();updateGoalProgress();}
 
-/* ==================================================
+/* --------------------------------------------------
    STREAK & STATS
-================================================== */
+/* ------------------------------ */
 function calcStreak(){
   const bd={};state.log.forEach(e=>{bd[e.date]=(bd[e.date]||0)+e.seconds;});
   let streak=0;const today=localDate();const d=new Date();
@@ -2769,9 +2769,9 @@ function updateStats(){
   document.getElementById('weekly-stats').innerHTML=html;
 }
 
-/* ==================================================
+/* --------------------------------------------------
    CALENDAR
-================================================== */
+/* ------------------------------ */
 const MFR=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 const DFR=['Lu','Ma','Me','Je','Ve','Sa','Di'];
 const CPOOL=['#6A78A8','#6E9470','#B8883A','#7870A0','#9E6862','#548480','#9A7E5A'];
@@ -2799,9 +2799,9 @@ function renderCalendar(){
   grid.innerHTML=html;renderUpcoming();
 }
 
-/* ==================================================
+/* --------------------------------------------------
    EVENTS
-================================================== */
+/* ------------------------------ */
 function openEv(date){
   editEvId=null;
   ['ev-title','ev-matiere','ev-time','ev-time-end','ev-desc'].forEach(id=>document.getElementById(id).value='');
@@ -2843,9 +2843,9 @@ function renderUpcoming(){
   </div>`).join('');
 }
 
-/* ==================================================
+/* --------------------------------------------------
    TODOS
-================================================== */
+/* ------------------------------ */
 function saveTodo(){
   const title=document.getElementById('todo-title').value.trim();
   if(!title){showToast('\u26A0 Titre requis','red');return;}
@@ -2877,9 +2877,9 @@ function renderTodos(){
   </div>`).join('');
 }
 
-/* ==================================================
+/* --------------------------------------------------
    DAY VIEW
-================================================== */
+/* ------------------------------ */
 let dayViewDate=new Date();
 const DAY_FR=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
 function changeDayView(d){dayViewDate.setDate(dayViewDate.getDate()+d);renderDayView();}
@@ -2926,9 +2926,9 @@ function renderDayView(){
 function openEvAtTime(date,time){openEv(date);setTimeout(()=>{document.getElementById('ev-time').value=time;},50);}
 function isLightColor(hex){const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return (r*299+g*587+b*114)/1000>128;}
 
-/* ==================================================
+/* --------------------------------------------------
    ICS IMPORT / EXPORT
-================================================== */
+/* ------------------------------ */
 function importICS(event){
   const file=event.target.files[0];if(!file)return;
   const reader=new FileReader();
@@ -2986,9 +2986,9 @@ function importData(ev){
   r.readAsText(f);
 }
 
-/* ==================================================
+/* --------------------------------------------------
    GOAL SETTINGS
-================================================== */
+/* ------------------------------ */
 const DAYS_LABELS=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
 function getTodayGoal(){const di=(new Date().getDay()+6)%7;if(state.dailyGoals&&state.dailyGoals[di]!=null)return state.dailyGoals[di];return state.goal;}
 function renderDailyGoalsForm(){
@@ -3023,9 +3023,9 @@ function saveDailyGoals(){
 }
 function resetDailyGoals(){state.dailyGoals=Array(7).fill(null);renderDailyGoalsForm();save();updateGoalProgress();showToast('\u2713 Remis par défaut');}
 
-/* ==================================================
+/* --------------------------------------------------
    STATS TAB
-================================================== */
+/* ------------------------------ */
 let statPeriod=30;
 function setStatPeriod(days,btn){
   statPeriod=days;
@@ -3117,9 +3117,9 @@ function renderStatLog(logs){
   }).join('');
 }
 
-/* ==================================================
+/* --------------------------------------------------
    TOAST
-================================================== */
+/* ------------------------------ */
 function showToast(msg,type){
   const t=document.getElementById('toast');t.textContent=msg;
   const c=type==='red'?'var(--rose)':type==='amber'?'var(--amber)':'var(--sage)';
@@ -3127,9 +3127,9 @@ function showToast(msg,type){
   t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3200);
 }
 
-/* ==================================================
+/* --------------------------------------------------
    FICHIERS \u2014 Firebase Storage
-================================================== */
+/* ------------------------------ */
 let storage = null;
 let userFiles = []; // cache local
 
@@ -3429,7 +3429,7 @@ function formatHistDate(ds){
 }
 
 
-================================================== */
+/* ------------------------------ */
 document.addEventListener('visibilitychange', ()=>{
   if(document.visibilityState === 'visible'){
     // Recalculer le temps écoulé réel pour la session
@@ -3480,9 +3480,9 @@ document.addEventListener('keydown',e=>{
   }
 });
 
-/* ==================================================
+/* --------------------------------------------------
    AUTO SAVE
-================================================== */
+/* ------------------------------ */
 setInterval(()=>{
   if(!DOC_REF) return;
   const ha=sessionRunning||pauseRunning||state.timers.some(t=>t.running);
@@ -3492,9 +3492,9 @@ setInterval(()=>{
   }
 },20*60*1000);
 
-/* ==================================================
+/* --------------------------------------------------
    INIT
-================================================== */
+/* ------------------------------ */
 // Auth state change handles everything \u2014 see auth.onAuthStateChanged above
 </script>
 </body>
