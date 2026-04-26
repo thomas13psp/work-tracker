@@ -631,7 +631,7 @@ textarea.input-field { resize: vertical; }
 }
 .pom-card.break { border-color: var(--teal); }
 .pom-card.break::before { background: linear-gradient(90deg, var(--teal), var(--lav)); }
-.pom-card.long-break::before { background: linear-gradient(90deg, var(--lav), var(--rose)); }
+
 
 .pom-header {
   display: flex;
@@ -654,7 +654,7 @@ textarea.input-field { resize: vertical; }
   transition: all .4s;
 }
 .pom-phase-badge.break { background: rgba(72,136,168,.12); border-color: rgba(72,136,168,.3); color: var(--teal); }
-.pom-phase-badge.long-break { background: rgba(120,120,192,.12); border-color: rgba(120,120,192,.3); color: var(--lav); }
+
 
 .pom-cycles-row {
   display: flex;
@@ -1462,21 +1462,7 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
                 <button class="pom-chip-btn" onclick="adjPom('work',5)">+</button>
                 <span class="pom-chip-unit">min</span>
               </div>
-              <div class="pom-setting-chip">
-                <span>☕</span>
-                <button class="pom-chip-btn" onclick="adjPom('short',-1)">−</button>
-                <span class="pom-chip-val" id="pom-short-val">5</span>
-                <button class="pom-chip-btn" onclick="adjPom('short',1)">+</button>
-                <span class="pom-chip-unit">min</span>
               </div>
-              <div class="pom-setting-chip">
-                <span>🌿</span>
-                <button class="pom-chip-btn" onclick="adjPom('long',-5)">−</button>
-                <span class="pom-chip-val" id="pom-long-val">15</span>
-                <button class="pom-chip-btn" onclick="adjPom('long',5)">+</button>
-                <span class="pom-chip-unit">min</span>
-              </div>
-            </div>
 
           </div>
         </div>
@@ -1927,7 +1913,7 @@ if(!state.dailyGoals)state.dailyGoals=Array(7).fill(null);
    SETTINGS
 /* ------------------------------ */
 let settings = JSON.parse(localStorage.getItem('wt_settings')||'{}');
-settings = Object.assign({breakReminder:false, breakHours:2, autoLog:true, showRecap:true, theme:'warm', pomWork:25, pomShort:5, pomLong:15, templates:[{label:'📚 Cours',subject:'Cours',note:''},{label:'✏️ Révision',subject:'Révision',note:''},{label:'📝 Devoir',subject:'Devoir',note:''},{label:'🔬 Labo',subject:'Labo',note:''}]}, settings);
+settings = Object.assign({breakReminder:false, breakHours:2, autoLog:true, showRecap:true, theme:'warm', pomWork:25, pomShort:5, templates:[{label:'📚 Cours',subject:'Cours',note:''},{label:'✏️ Révision',subject:'Révision',note:''},{label:'📝 Devoir',subject:'Devoir',note:''},{label:'🔬 Labo',subject:'Labo',note:''}]}, settings);
 
 function saveSettings(){
   settings.breakReminder = document.getElementById('break-toggle').checked;
@@ -1946,10 +1932,8 @@ function loadSettings(){
   document.getElementById('recap-bar').style.display = settings.showRecap ? '' : 'none';
   pomSettings.work  = settings.pomWork  || 25;
   pomSettings.short = settings.pomShort || 5;
-  pomSettings.long  = settings.pomLong  || 15;
   document.getElementById('pom-work-val').textContent  = pomSettings.work;
   document.getElementById('pom-short-val').textContent = pomSettings.short;
-  document.getElementById('pom-long-val').textContent  = pomSettings.long;
 }
 function toggleRecapBar(){
   saveSettings();
@@ -2191,7 +2175,7 @@ function applyTemplate(i){
 /* ------------------------------ */
 const POM_CYCLES = 4;
 const CIRCUMFERENCE = 603; // 2*PI*96
-let pomSettings = {work:25, short:5, long:15};
+let pomSettings = {work:25, short:5};
 let pomState = {
   active: false,
   type: 'work',
@@ -2202,10 +2186,10 @@ let pomState = {
   startedAt: null
 };
 
-function pomDuration(){ return pomState.type==='work'?pomSettings.work*60:pomState.type==='short'?pomSettings.short*60:pomSettings.long*60; }
-function pomColor(){ return pomState.type==='work'?'var(--sage)':pomState.type==='short'?'var(--teal)':'var(--lav)'; }
-function pomLabel(){ return pomState.type==='work'?'TRAVAIL':pomState.type==='short'?'PAUSE':'GRANDE PAUSE'; }
-function pomBadgeText(){ return pomState.type==='work'?'🍅 TRAVAIL':pomState.type==='short'?'☕ PAUSE':'🌿 GRANDE PAUSE'; }
+function pomDuration(){ return pomState.type==='work'?pomSettings.work*60:pomSettings.short*60; }
+function pomColor(){ return pomState.type==='work'?'var(--sage)':'var(--teal)'; }
+function pomLabel(){ return pomState.type==='work'?'TRAVAIL':'PAUSE'; }
+function pomBadgeText(){ return pomState.type==='work'?'🍅 TRAVAIL':'⏸ PAUSE'; }
 function pomGetSub(){ return (document.getElementById('pom-subject')||{}).value?.trim()||'Pomodoro'; }
 function pomGetNote(){ return (document.getElementById('pom-note')||{}).value?.trim()||''; }
 
@@ -2313,23 +2297,29 @@ function tickPomodoro(){
       pomState.autoLoggedSecs = 0;
       save(); renderLog(); updateGoalProgress(); renderRecap(); renderHistCalendar();
       pomState.cyclesCompleted++;
-      const isLong = (pomState.cyclesCompleted % POM_CYCLES === 0);
-      pomState.type = isLong ? 'long' : 'short';
-      // Son de pause (doux)
+      pomState.type = 'short';
       playBreakSound();
-      showToast('🎉 Pomodoro terminé — ' + (isLong ? 'Grande pause !' : 'Pause '+pomSettings.short+'min'));
+      showToast('🎉 Pomodoro terminé ! Pause '+pomSettings.short+'min — lancée automatiquement');
     } else {
       pomState.type = 'work';
-      playWorkSound();
-      showToast('▶ C\'est reparti — nouveau Pomodoro !');
+      playAlarm();
+      showToast('▶ Pause terminée — Pomodoro lancé !');
     }
 
     pomState.elapsed = 0;
     renderPomCycles();
     updatePomDisplay();
-    document.getElementById('pom-btn').className = 'pom-ctrl-btn pom-ctrl-main';
-    document.getElementById('pom-btn-icon').textContent = '▶';
-    document.getElementById('pom-btn-label').textContent = 'Démarrer';
+    // Auto-start la phase suivante après 1s
+    setTimeout(()=>{
+      pomState.active = true;
+      pomState.startedAt = Date.now();
+      pomState.interval = setInterval(tickPomodoro, 1000);
+      document.getElementById('pom-btn').className = 'pom-ctrl-btn pom-ctrl-main paused';
+      document.getElementById('pom-btn-icon').textContent = '⏸';
+      document.getElementById('pom-btn-label').textContent = pomState.type==='work'?'Pause':'Arrêter';
+      document.getElementById('recap-pomodoro').style.display = 'flex';
+      updatePomDisplay();
+    }, 1000);
   }
 }
 
@@ -2372,8 +2362,7 @@ function skipPomodoro(){
       save(); renderLog(); updateGoalProgress(); renderRecap(); renderHistCalendar();
     }
     pomState.autoLoggedSecs=0;
-    const isLong=(pomState.cyclesCompleted%POM_CYCLES===0 && pomState.cyclesCompleted>0);
-    pomState.type=isLong?'long':'short';
+    pomState.type='short';
     pomState.cyclesCompleted++;
     playBreakSound();
   } else {
@@ -2391,11 +2380,9 @@ function skipPomodoro(){
 function adjPom(type,delta){
   if(type==='work')  pomSettings.work  = Math.max(5, pomSettings.work+delta);
   if(type==='short') pomSettings.short = Math.max(1, pomSettings.short+delta);
-  if(type==='long')  pomSettings.long  = Math.max(5, pomSettings.long+delta);
   document.getElementById('pom-work-val').textContent  = pomSettings.work;
   document.getElementById('pom-short-val').textContent = pomSettings.short;
-  document.getElementById('pom-long-val').textContent  = pomSettings.long;
-  settings.pomWork=pomSettings.work; settings.pomShort=pomSettings.short; settings.pomLong=pomSettings.long;
+  settings.pomWork=pomSettings.work; settings.pomShort=pomSettings.short;
   localStorage.setItem('wt_settings', JSON.stringify(settings));
   if(!pomState.active){ pomState.elapsed=0; updatePomDisplay(); }
 }
@@ -2408,13 +2395,13 @@ function updatePomDisplay(){
   const color = pomColor();
 
   const dispEl = document.getElementById('pom-display');
-  if(dispEl){ dispEl.textContent = timeStr; dispEl.className = 'pom-time'+(pomState.active&&pomState.type==='work'?' running':pomState.type!=='work'?' break':''); }
+  if(dispEl){ dispEl.textContent = timeStr; dispEl.className = 'pom-time'+(pomState.active&&pomState.type==='work'?' running':pomState.type==='short'?' break':''); }
 
   const typeEl = document.getElementById('pom-type-label');
   if(typeEl) typeEl.textContent = pomLabel();
 
   const badgeEl = document.getElementById('pom-phase-badge');
-  if(badgeEl){ badgeEl.textContent = pomBadgeText(); badgeEl.className = 'pom-phase-badge'+(pomState.type==='short'?' break':pomState.type==='long'?' long-break':''); }
+  if(badgeEl){ badgeEl.textContent = pomBadgeText(); badgeEl.className = 'pom-phase-badge'+(pomState.type==='short'?' break':''); }
 
   const fg = document.getElementById('pom-ring-fg');
   const glow = document.getElementById('pom-glow');
@@ -2425,7 +2412,7 @@ function updatePomDisplay(){
 
   // Card style
   const card = document.querySelector('.pom-card');
-  if(card){ card.className = 'pom-card'+(pomState.type==='short'?' break':pomState.type==='long'?' long-break':''); }
+  if(card){ card.className = 'pom-card'+(pomState.type==='short'?' break':''); }
 
   // Elapsed label
   const elEl = document.getElementById('pom-elapsed-label');
@@ -2447,52 +2434,21 @@ function renderPomCycles(){
   }).join('');
 }
 
-// Son fin de travail -> PAUSE (mélodie douce descendante, 3 notes)
+// Son doux de pause (descente)
 function playBreakSound(){
   try{
-    const ctx = new(window.AudioContext||window.webkitAudioContext)();
-    // 3 notes douces descendantes : Do Mi Sol → signal de repos
-    const notes = [[784,0],[659,.4],[523,.8]];
-    notes.forEach(([freq,delay])=>{
-      const osc=ctx.createOscillator(), g=ctx.createGain();
-      osc.connect(g); g.connect(ctx.destination);
-      osc.type='triangle'; osc.frequency.value=freq;
-      g.gain.setValueAtTime(0, ctx.currentTime+delay);
-      g.gain.linearRampToValueAtTime(0.35, ctx.currentTime+delay+0.05);
-      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+delay+1.6);
-      osc.start(ctx.currentTime+delay);
-      osc.stop(ctx.currentTime+delay+1.6);
-    });
-    // Petit ding final
-    const osc2=ctx.createOscillator(), g2=ctx.createGain();
-    osc2.connect(g2); g2.connect(ctx.destination);
-    osc2.type='sine'; osc2.frequency.value=1047;
-    g2.gain.setValueAtTime(0, ctx.currentTime+1.4);
-    g2.gain.linearRampToValueAtTime(0.2, ctx.currentTime+1.45);
-    g2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+2.8);
-    osc2.start(ctx.currentTime+1.4); osc2.stop(ctx.currentTime+2.8);
-  }catch(e){}
-}
-
-// Son fin de pause -> TRAVAIL (mélodie montante énergique, 4 notes)
-function playWorkSound(){
-  try{
-    const ctx = new(window.AudioContext||window.webkitAudioContext)();
-    // 4 notes montantes : signal de reprise du travail
-    const notes = [[523,0],[659,.25],[784,.5],[1047,.75]];
-    notes.forEach(([freq,delay])=>{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    [[523,0],[659,.3],[784,.6],[523,.9]].forEach(([freq,delay])=>{
       const osc=ctx.createOscillator(), g=ctx.createGain();
       osc.connect(g); g.connect(ctx.destination);
       osc.type='sine'; osc.frequency.value=freq;
-      g.gain.setValueAtTime(0, ctx.currentTime+delay);
-      g.gain.linearRampToValueAtTime(0.3, ctx.currentTime+delay+0.05);
-      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+delay+1.4);
-      osc.start(ctx.currentTime+delay);
-      osc.stop(ctx.currentTime+delay+1.4);
+      g.gain.setValueAtTime(0,ctx.currentTime+delay);
+      g.gain.linearRampToValueAtTime(.18,ctx.currentTime+delay+.06);
+      g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+delay+1.2);
+      osc.start(ctx.currentTime+delay); osc.stop(ctx.currentTime+delay+1.2);
     });
   }catch(e){}
 }
-
 
 renderPomCycles(); updatePomDisplay();
 // Restore crash state after a short delay (state may not be loaded yet)
