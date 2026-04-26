@@ -992,90 +992,7 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
   .sound-icon { font-size: 1.3rem; }
 }
 
-/* --- Fichiers --- */
-.file-drop-zone {
-  border: 2px dashed var(--border2);
-  border-radius: var(--r-lg);
-  padding: 48px 20px;
-  text-align: center;
-  transition: all .25s;
-  cursor: pointer;
-  background: var(--surface2);
-}
-.file-drop-zone:hover, .file-drop-zone.dragover {
-  border-color: var(--indigo);
-  background: var(--indigo-d);
-  transform: scale(1.005);
-}
-.file-drop-icon { font-size: 3rem; margin-bottom: 12px; display: block; }
-.file-drop-text { font-family: var(--body); font-size: .92rem; color: var(--text); font-weight: 500; }
-.file-drop-sub  { font-family: var(--mono); font-size: .65rem; color: var(--text3); margin-top: 6px; }
 
-.file-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  transition: border-color .2s, background .2s;
-  margin-bottom: 8px;
-}
-.file-item:hover { border-color: var(--border2); background: var(--surface3); }
-.file-icon { font-size: 1.8rem; flex-shrink: 0; width: 40px; text-align: center; }
-.file-name { font-size: .9rem; font-weight: 500; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.file-meta { font-family: var(--mono); font-size: .62rem; color: var(--text3); margin-top: 4px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.file-progress {
-  width: 100%;
-  height: 3px;
-  background: var(--border);
-  border-radius: 100px;
-  overflow: hidden;
-  margin-top: 6px;
-}
-.file-progress-bar {
-  height: 100%;
-  background: var(--indigo);
-  border-radius: 100px;
-  transition: width .2s;
-}
-
-.storage-bar-wrap {
-  background: var(--surface3);
-  border-radius: 100px;
-  height: 8px;
-  overflow: hidden;
-  margin: 8px 0 6px;
-}
-.storage-bar {
-  height: 100%;
-  background: linear-gradient(90deg, var(--indigo), var(--teal));
-  border-radius: 100px;
-  transition: width .6s;
-}
-
-/* PDF viewer modal */
-.pdf-modal {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.92);
-  z-index: 200;
-  flex-direction: column;
-}
-.pdf-modal.open { display: flex; }
-.pdf-modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 20px;
-  background: var(--sidebar);
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-.pdf-modal-title { font-family: var(--mono); font-size: .78rem; color: var(--text); max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pdf-modal iframe { flex: 1; border: none; background: white; }
 
 /* --- Hist calendrier --- */
 .hist-day {
@@ -1139,7 +1056,6 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
 </head>
 <body>
 
@@ -1250,7 +1166,6 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
   <div class="pdf-modal-header">
     <span class="pdf-modal-title" id="pdf-modal-title">Aperçu</span>
     <div style="display:flex;gap:8px">
-      <a id="pdf-download-btn" href="#" download class="btn btn-muted" style="font-size:.72rem;padding:5px 12px">⬇ Télécharger</a>
       <button class="btn btn-red" onclick="closePdfModal()" style="font-size:.72rem;padding:5px 12px">✕ Fermer</button>
     </div>
   </div>
@@ -1265,7 +1180,7 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
       <img id="user-avatar" src="" width="36" height="36"
         style="border-radius:50%;object-fit:cover;background:var(--surface3);display:block;border:2px solid var(--border2)"
         onerror="this.style.display='none';document.getElementById('avatar-fallback').style.display='flex'">
-      <div id="avatar-fallback" style="display:none;width:36px;height:36px;border-radius:50%;background:var(--indigo-d);border:2px solid var(--indigo-b);align-items:center;justify-content:center;font-family:var(--display);font-size:1rem;font-style:italic;color:var(--indigo)" id="avatar-fallback"></div>
+      <div id="avatar-fallback" style="display:none;width:36px;height:36px;border-radius:50%;background:var(--indigo-d);border:2px solid var(--indigo-b);align-items:center;justify-content:center;font-family:var(--display);font-size:1rem;font-style:italic;color:var(--indigo)"></div>
     </div>
     <div>
       <div class="logo-name" id="sidebar-user-name">—</div>
@@ -1286,9 +1201,6 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
     </button>
     <button class="nav-pill" id="nav-stats"  onclick="switchTab('stats',this)">
       <span class="ni">📊</span><span>Analyse</span>
-    </button>
-    <button class="nav-pill" id="nav-fichiers" onclick="switchTab('fichiers',this)">
-      <span class="ni">📁</span><span>Fichiers</span>
     </button>
   </nav>
 
@@ -1338,38 +1250,62 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
     <div class="tab-panel active" id="tab-suivi">
       <div class="grid">
 
+        <!-- Pomodoro (déplacé ici depuis Outils) -->
         <div class="card sage col-1">
-          <div class="card-title">Session de travail</div>
+          <div class="card-title">🍅 Pomodoro — Session de travail</div>
+          <div class="pom-ring">
+            <svg width="200" height="200" viewBox="0 0 200 200">
+              <circle class="pom-ring-bg" cx="100" cy="100" r="88" fill="none" stroke-width="8"/>
+              <circle class="pom-ring-fg" id="pom-ring-fg" cx="100" cy="100" r="88" fill="none" stroke-width="8"
+                stroke-dasharray="553" stroke-dashoffset="0"/>
+            </svg>
+            <div class="pom-ring-label">
+              <div class="pom-ring-time" id="pom-display">25:00</div>
+              <div class="pom-ring-type" id="pom-type-label">TRAVAIL</div>
+            </div>
+          </div>
+          <div class="pom-cycles" id="pom-cycles"></div>
 
-          <div style="margin-bottom:14px">
-            <div class="section-sub">Démarrage rapide</div>
-            <div class="template-grid" id="templates-container"></div>
-          </div>
-
-          <div class="big-timer" id="session-display">00:00:00</div>
-          <div class="session-meta" id="session-meta">En attente de démarrage</div>
-          <div id="pause-indicator">
-            ☕ Pause : <span id="pause-display" style="font-family:var(--mono)">00:00:00</span>
-          </div>
-          <div class="btn-row">
-            <button class="btn btn-green" id="session-btn" onclick="toggleSession()">▶ Démarrer</button>
-            <button class="btn btn-muted" id="pause-btn" onclick="togglePause()" style="opacity:.4;cursor:not-allowed" disabled>☕ Pause</button>
-            <button class="btn btn-muted" onclick="resetSession()">↺ Reset</button>
-            <button class="btn btn-red"   onclick="stopSession()">⏹ Stop</button>
-          </div>
+          <!-- Matière + note -->
           <div style="display:flex;gap:8px;margin-top:12px">
-            <input class="input-field" id="session-subject" placeholder="Matière" style="flex:1.2">
-            <input class="input-field" id="session-note" placeholder="Note..." style="flex:1">
+            <input class="input-field" id="pom-subject" placeholder="Matière (ex: Maths)" style="flex:1.2">
+            <input class="input-field" id="pom-note" placeholder="Note..." style="flex:1">
           </div>
 
-          <div class="section-divider">
-            <div class="section-sub">Ajout manuel</div>
-            <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center">
-              <input class="input-field" id="manual-hours"   type="number" min="0" placeholder="h" style="width:58px">
-              <input class="input-field" id="manual-mins"    type="number" min="0" max="59" placeholder="min" style="width:66px">
-              <input class="input-field" id="manual-subject" placeholder="Matière" style="flex:1;min-width:80px">
-              <input class="input-field" id="manual-note"    placeholder="Note..." style="flex:1;min-width:80px">
-              <button class="btn btn-amber" onclick="addManualTime()">+ Ajouter</button>
+          <div class="btn-row" style="justify-content:center">
+            <button class="btn btn-green" id="pom-btn" onclick="togglePomodoro()">▶ Démarrer</button>
+            <button class="btn btn-muted" onclick="resetPomodoro()">↺ Reset</button>
+            <button class="btn btn-muted" onclick="skipPomodoro()" title="Passer à la phase suivante">⏭</button>
+          </div>
+
+          <!-- Info enregistrement -->
+          <div id="pom-log-info" style="display:none;margin-top:10px;padding:8px 12px;background:var(--sage-d);border:1px solid rgba(94,148,120,.3);border-radius:var(--r-sm);font-family:var(--mono);font-size:.68rem;color:var(--sage);text-align:center"></div>
+
+          <div class="pom-settings">
+            <div class="section-sub" style="margin-bottom:8px">Durées (minutes)</div>
+            <div class="pom-setting-row">
+              <span class="pom-setting-label">🍅 Travail</span>
+              <div class="pom-number">
+                <button class="pom-num-btn" onclick="adjPom('work',-5)">−</button>
+                <span class="pom-num-val" id="pom-work-val">25</span>
+                <button class="pom-num-btn" onclick="adjPom('work',5)">+</button>
+              </div>
+            </div>
+            <div class="pom-setting-row">
+              <span class="pom-setting-label">☕ Pause courte</span>
+              <div class="pom-number">
+                <button class="pom-num-btn" onclick="adjPom('short',-1)">−</button>
+                <span class="pom-num-val" id="pom-short-val">5</span>
+                <button class="pom-num-btn" onclick="adjPom('short',1)">+</button>
+              </div>
+            </div>
+            <div class="pom-setting-row">
+              <span class="pom-setting-label">🌿 Grande pause</span>
+              <div class="pom-number">
+                <button class="pom-num-btn" onclick="adjPom('long',-5)">−</button>
+                <span class="pom-num-val" id="pom-long-val">15</span>
+                <button class="pom-num-btn" onclick="adjPom('long',5)">+</button>
+              </div>
             </div>
           </div>
         </div>
@@ -1392,15 +1328,15 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
           <div class="stats-row" id="weekly-stats"></div>
         </div>
 
-        <div class="card teal col-full">
-          <div class="card-title">Minuteurs personnalisés</div>
-          <div id="timer-list"></div>
-          <div style="display:flex;gap:7px;margin-top:14px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--border)">
-            <input class="input-field" id="new-timer-name"     placeholder="Nom du minuteur" style="flex:2;min-width:110px">
-            <input class="input-field" id="new-timer-matiere"  placeholder="Matière" style="flex:1.2;min-width:80px">
-            <input class="input-field" id="new-timer-hours"    type="number" min="0" max="23" placeholder="h" style="flex:0.5;min-width:42px">
-            <input class="input-field" id="new-timer-duration" type="number" min="0" max="59" placeholder="min" style="flex:0.6;min-width:50px">
-            <button class="btn btn-green" onclick="addTimer()">+ Ajouter</button>
+        <!-- Ajout manuel -->
+        <div class="card col-1">
+          <div class="card-title">✏ Ajout manuel</div>
+          <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center">
+            <input class="input-field" id="manual-hours"   type="number" min="0" placeholder="h" style="width:58px">
+            <input class="input-field" id="manual-mins"    type="number" min="0" max="59" placeholder="min" style="width:66px">
+            <input class="input-field" id="manual-subject" placeholder="Matière" style="flex:1;min-width:80px">
+            <input class="input-field" id="manual-note"    placeholder="Note..." style="flex:1;min-width:80px">
+            <button class="btn btn-amber" onclick="addManualTime()">+ Ajouter</button>
           </div>
         </div>
 
@@ -1414,6 +1350,18 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
           </div>
         </div>
 
+        <div class="card teal col-full">
+          <div class="card-title">Minuteurs personnalisés</div>
+          <div id="timer-list"></div>
+          <div style="display:flex;gap:7px;margin-top:14px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--border)">
+            <input class="input-field" id="new-timer-name"     placeholder="Nom du minuteur" style="flex:2;min-width:110px">
+            <input class="input-field" id="new-timer-matiere"  placeholder="Matière" style="flex:1.2;min-width:80px">
+            <input class="input-field" id="new-timer-hours"    type="number" min="0" max="23" placeholder="h" style="flex:0.5;min-width:42px">
+            <input class="input-field" id="new-timer-duration" type="number" min="0" max="59" placeholder="min" style="flex:0.6;min-width:50px">
+            <button class="btn btn-green" onclick="addTimer()">+ Ajouter</button>
+          </div>
+        </div>
+
         <div class="card col-full">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
             <div class="card-title" style="margin:0">📅 Historique — heures travaillées</div>
@@ -1424,9 +1372,7 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
               <button class="btn btn-muted" onclick="histGoToday()" style="font-size:.68rem;padding:4px 10px">Auj.</button>
             </div>
           </div>
-
           <div id="hist-cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:14px"></div>
-
           <div id="hist-day-detail" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
               <div id="hist-day-title" style="font-family:var(--display);font-size:1rem;font-style:italic;color:var(--text)"></div>
@@ -1491,58 +1437,7 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
     <div class="tab-panel" id="tab-outils">
       <div class="grid">
 
-        <div class="card sage col-1">
-          <div class="card-title">🍅 Pomodoro</div>
-          <div class="pom-ring">
-            <svg width="200" height="200" viewBox="0 0 200 200">
-              <circle class="pom-ring-bg" cx="100" cy="100" r="88" fill="none" stroke-width="8"/>
-              <circle class="pom-ring-fg" id="pom-ring-fg" cx="100" cy="100" r="88" fill="none" stroke-width="8"
-                stroke-dasharray="553" stroke-dashoffset="0"/>
-            </svg>
-            <div class="pom-ring-label">
-              <div class="pom-ring-time" id="pom-display">25:00</div>
-              <div class="pom-ring-type" id="pom-type-label">TRAVAIL</div>
-            </div>
-          </div>
-          <div class="pom-cycles" id="pom-cycles"></div>
-          <div class="btn-row" style="justify-content:center">
-            <button class="btn btn-green" id="pom-btn" onclick="togglePomodoro()">▶ Démarrer</button>
-            <button class="btn btn-muted" onclick="resetPomodoro()">↺ Reset</button>
-            <button class="btn btn-muted" onclick="skipPomodoro()" title="Passer à la phase suivante">⏭</button>
-          </div>
-          <div style="margin-top:12px; width: 100%">
-            <input class="input-field" id="pom-subject" placeholder="Matière (ex: Maths)" style="width:100%; text-align:center;">
-          </div>
-          <div class="pom-settings">
-            <div class="section-sub" style="margin-bottom:8px">Durées (minutes)</div>
-            <div class="pom-setting-row">
-              <span class="pom-setting-label">🍅 Travail</span>
-              <div class="pom-number">
-                <button class="pom-num-btn" onclick="adjPom('work',-5)">−</button>
-                <span class="pom-num-val" id="pom-work-val">25</span>
-                <button class="pom-num-btn" onclick="adjPom('work',5)">+</button>
-              </div>
-            </div>
-            <div class="pom-setting-row">
-              <span class="pom-setting-label">☕ Pause courte</span>
-              <div class="pom-number">
-                <button class="pom-num-btn" onclick="adjPom('short',-1)">−</button>
-                <span class="pom-num-val" id="pom-short-val">5</span>
-                <button class="pom-num-btn" onclick="adjPom('short',1)">+</button>
-              </div>
-            </div>
-            <div class="pom-setting-row">
-              <span class="pom-setting-label">🌿 Grande pause</span>
-              <div class="pom-number">
-                <button class="pom-num-btn" onclick="adjPom('long',-5)">−</button>
-                <span class="pom-num-val" id="pom-long-val">15</span>
-                <button class="pom-num-btn" onclick="adjPom('long',5)">+</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div style="display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;flex-direction:column;gap:16px;grid-column:1/-1">
 
           <div class="card teal">
             <div class="card-title">🎵 Sons ambiants</div>
@@ -1702,68 +1597,6 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
         </div>
 
       </div>
-    </div><div class="tab-panel" id="tab-fichiers">
-      <div class="grid">
-
-        <div style="display:flex;flex-direction:column;gap:16px" class="col-1">
-
-          <div class="card sage">
-            <div class="card-title">📤 Uploader</div>
-            <div class="file-drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()"
-              ondragover="event.preventDefault();this.classList.add('dragover')"
-              ondragleave="this.classList.remove('dragover')"
-              ondrop="handleDrop(event)">
-              <span class="file-drop-icon">📂</span>
-              <div class="file-drop-text">Glisse ici ou clique</div>
-              <div class="file-drop-sub">PDF, Images, Word, Excel · max 50MB</div>
-            </div>
-            <input type="file" id="file-input" style="display:none" multiple accept=".pdf,.png,.jpg,.jpeg,.gif,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" onchange="handleFileSelect(event)">
-            <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">
-              <input class="input-field" id="upload-matiere" placeholder="Matière (optionnel)">
-              <input class="input-field" id="upload-desc" placeholder="Description (optionnel)">
-            </div>
-            <div id="upload-list" style="margin-top:10px;display:flex;flex-direction:column;gap:6px"></div>
-          </div>
-
-          <div class="card amber">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-              <div class="card-title" style="margin:0">💾 Stockage</div>
-              <span id="storage-text" style="font-family:var(--mono);font-size:.72rem;color:var(--text2)">—</span>
-            </div>
-            <div class="storage-bar-wrap"><div class="storage-bar" id="storage-bar" style="width:0%"></div></div>
-            <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:.6rem;color:var(--text3);margin-top:4px">
-              <span>0 MB utilisés</span>
-              <span>2 500 MB disponibles</span>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-title">📊 Résumé</div>
-            <div id="files-stats" style="display:flex;flex-direction:column;gap:8px">
-              <div class="empty-log">Aucun fichier</div>
-            </div>
-          </div>
-
-        </div>
-
-        <div class="card col-2">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-            <div class="card-title" style="margin:0">📄 Mes fichiers <span id="files-count" style="color:var(--text3);font-size:.6rem;margin-left:4px"></span></div>
-            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-              <select class="input-field" id="file-filter-matiere" style="width:150px;font-size:.78rem" onchange="renderFiles()">
-                <option value="">Toutes les matières</option>
-              </select>
-              <select class="input-field" id="file-sort" style="width:120px;font-size:.78rem" onchange="renderFiles()">
-                <option value="date">Plus récents</option>
-                <option value="name">A-Z</option>
-                <option value="size">Taille</option>
-              </select>
-            </div>
-          </div>
-          <div id="file-list"><div class="empty-log" style="padding:40px 0">Aucun fichier — commence par uploader !</div></div>
-        </div>
-
-      </div>
     </div></div></div><nav class="bottom-nav">
     <button class="bottom-nav-btn active" id="bnav-suivi" onclick="switchTab('suivi',this);updateBottomNav('suivi')">
       <span class="bni">⏱</span>Suivi
@@ -1776,9 +1609,6 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
     </button>
     <button class="bottom-nav-btn" id="bnav-stats" onclick="switchTab('stats',this);updateBottomNav('stats')">
       <span class="bni">📊</span>Stats
-    </button>
-    <button class="bottom-nav-btn" id="bnav-fichiers" onclick="switchTab('fichiers',this);updateBottomNav('fichiers')">
-      <span class="bni">📁</span>Fichiers
     </button>
     <button class="bottom-nav-btn" onclick="logout()" style="color:var(--rose)">
       <span class="bni">⏻</span>Quitter
@@ -1844,16 +1674,13 @@ auth.onAuthStateChanged(user=>{
     document.getElementById('login-screen').style.display='none';
     document.getElementById('app-shell').style.display='flex';
     // Charger les données
-    state=JSON.parse(localStorage.getItem('worklog_state_'+user.uid)||'null')||{goal:8,log:[],timers:[],events:[],todos:[],docs:[],notes:{},subjectGoals:[]};
+    state=JSON.parse(localStorage.getItem('worklog_state_'+user.uid)||'null')||{goal:8,log:[],timers:[],events:[],todos:[],notes:{},subjectGoals:[]};
     if(!state.events)state.events=[];
     if(!state.todos)state.todos=[];
     if(!state.docs)state.docs=[];
     if(!state.notes)state.notes={};
     if(!state.subjectGoals)state.subjectGoals=[];
     if(!state.dailyGoals)state.dailyGoals=Array(7).fill(null);
-    // Init Storage
-    try { storage = firebase.storage(); } catch(e) { console.warn('Storage:', e); }
-    if(!state.files) state.files = [];
     loadFromFirestore();
   } else {
     currentUser=null; DOC_REF=null;
@@ -1910,17 +1737,15 @@ async function loadFromFirestore(){
       if(t.elapsed>=t.duration){t.done=true;t.running=false;t.startedAt=null;}
     }
   });
-  if(!state.files) state.files = [];
   loadSettings();
   updateGoalProgress();renderTimers();renderLog();renderCalendar();renderTodos();renderUpcoming();renderDayView();
   renderRecap();renderTemplates();renderNotes();renderSubjectGoals();renderHistCalendar();
-  renderFiles(); updateStorageUsage();
 }
 
 /* --------------------------------------------------
    STATE
 /* ------------------------------ */
-let state=JSON.parse(localStorage.getItem('worklog_state')||'null')||{goal:8,log:[],timers:[],events:[],todos:[],docs:[],notes:{},subjectGoals:[]};
+let state=JSON.parse(localStorage.getItem('worklog_state')||'null')||{goal:8,log:[],timers:[],events:[],todos:[],notes:{},subjectGoals:[]};
 if(!state.events)state.events=[];
 if(!state.todos)state.todos=[];
 if(!state.docs)state.docs=[];
@@ -1968,8 +1793,7 @@ const TAB_TITLES = {
   suivi:    '<span>Suivi</span> — Session de travail',
   agenda:   '<span>Agenda</span> — Calendrier & Tâches',
   outils:   '<span>Outils</span> — Pomodoro, Sons & Notes',
-  stats:    '<span>Analyse</span> — Statistiques détaillées',
-  fichiers: '<span>Fichiers</span> — Documents & PDFs'
+  stats:    '<span>Analyse</span> — Statistiques détaillées'
 };
 function updateBottomNav(n){
   document.querySelectorAll('.bottom-nav-btn').forEach(b=>b.classList.remove('active'));
@@ -2241,39 +2065,47 @@ function tickPomodoro(){
   pomState.elapsed++;
   updatePomDisplay();
 
-  // AUTO-LOG POMODORO (toutes les 10 min)
+  // Afficher le temps écoulé dans le panneau info
+  const infoEl = document.getElementById('pom-log-info');
+  if(infoEl && pomState.type === 'work'){
+    const sub = document.getElementById('pom-subject') ? document.getElementById('pom-subject').value.trim() : '';
+    const elapsed = fmtHM(pomState.elapsed);
+    const logged = fmtHM(pomState.autoLoggedSecs||0);
+    infoEl.style.display = 'block';
+    infoEl.textContent = '⏱ ' + elapsed + ' en cours' + (sub?' — '+sub:'') + (pomState.autoLoggedSecs>0?' · '+logged+' enregistrées':'');
+  }
+
+  // AUTO-LOG toutes les 10 min
   if(settings.autoLog && pomState.type === 'work' && pomState.elapsed > 0 && pomState.elapsed % 600 === 0){
-    const subject = document.getElementById('pom-subject').value.trim();
-    state.log.unshift({date:localDate(), seconds:600, pauseSeconds:0, note:'Auto-log 🍅', subject});
-    
+    const subject = document.getElementById('pom-subject') ? document.getElementById('pom-subject').value.trim() : '';
+    const note = document.getElementById('pom-note') ? document.getElementById('pom-note').value.trim() : '';
+    state.log.unshift({date:localDate(), seconds:600, pauseSeconds:0, note:'🍅 Auto-log Pomodoro'+(note?' — '+note:''), subject});
     if(!pomState.autoLoggedSecs) pomState.autoLoggedSecs = 0;
     pomState.autoLoggedSecs += 600;
-    
     save(); renderLog(); updateGoalProgress(); renderRecap(); renderHistCalendar();
-    showToast('⏱ +10min auto-enregistrées');
+    showToast('⏱ +10min Pomodoro — '+(subject||'enregistrées'));
   }
 
   if(pomState.elapsed>=pomDuration()){
     playAlarm();
     pomState.active=false;
     clearInterval(pomState.interval);
-    
+    if(infoEl) infoEl.style.display = 'none';
+
     if(pomState.type==='work'){
-      // Loguer le temps restant non auto-logué
-      const sub = document.getElementById('pom-subject').value.trim() || 'Pomodoro';
+      const sub = document.getElementById('pom-subject') ? document.getElementById('pom-subject').value.trim()||'Pomodoro' : 'Pomodoro';
+      const note = document.getElementById('pom-note') ? document.getElementById('pom-note').value.trim() : '';
       const alreadyLogged = pomState.autoLoggedSecs || 0;
       const remaining = (pomSettings.work * 60) - alreadyLogged;
-      
-      if (remaining > 0) {
-        state.log.unshift({date:localDate(),seconds:remaining,pauseSeconds:0,note:'🍅 Pomodoro terminé',subject:sub});
+      if(remaining > 0){
+        state.log.unshift({date:localDate(),seconds:remaining,pauseSeconds:0,note:'🍅 Pomodoro terminé'+(note?' — '+note:''),subject:sub});
       }
-      pomState.autoLoggedSecs = 0; // Réinitialisation
-
+      pomState.autoLoggedSecs = 0;
       save();renderLog();updateGoalProgress();renderRecap();renderHistCalendar();
       pomState.cyclesCompleted++;
       const isLong=(pomState.cyclesCompleted%POM_CYCLES===0);
       pomState.type=isLong?'long':'short';
-      showToast('🎉 Pomodoro terminé ! -> '+( isLong?'Grande pause ('+pomSettings.long+' min)':'Pause ('+pomSettings.short+' min)'));
+      showToast('🎉 Pomodoro terminé ! '+fmtHM(pomSettings.work*60)+' enregistrées pour '+sub);
     }else{
       pomState.type='work';
       showToast('▶ Reprise du travail — nouveau Pomodoro !');
@@ -2301,14 +2133,17 @@ function skipPomodoro(){
   
   // Enregistrer le temps partiel si on passe une session de travail en cours
   if(pomState.type==='work'){
-    const sub = document.getElementById('pom-subject').value.trim() || 'Pomodoro';
+    const sub = document.getElementById('pom-subject') ? document.getElementById('pom-subject').value.trim()||'Pomodoro' : 'Pomodoro';
+    const note = document.getElementById('pom-note') ? document.getElementById('pom-note').value.trim() : '';
     const alreadyLogged = pomState.autoLoggedSecs || 0;
     const remaining = pomState.elapsed - alreadyLogged;
-    if (remaining >= 10) { // On enregistre si au moins 10 secondes travaillées
-      state.log.unshift({date:localDate(), seconds:remaining, pauseSeconds:0, note:'🍅 Pomodoro (écourté)', subject:sub});
+    if(remaining >= 10){
+      state.log.unshift({date:localDate(), seconds:remaining, pauseSeconds:0, note:'🍅 Pomodoro (écourté)'+(note?' — '+note:''), subject:sub});
       save(); renderLog(); updateGoalProgress(); renderRecap(); renderHistCalendar();
     }
     pomState.autoLoggedSecs = 0;
+    const infoEl = document.getElementById('pom-log-info');
+    if(infoEl) infoEl.style.display = 'none';
     pomState.type='short';
   } else {
     pomState.type='work'; pomState.cyclesCompleted++;
@@ -3098,240 +2933,6 @@ function showToast(msg,type){
   t.style.borderColor=c;t.style.color=c;
   t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3200);
 }
-
-/* --------------------------------------------------
-   FICHIERS — Firebase Storage
-/* ------------------------------ */
-let storage = null;
-let userFiles = []; // cache local
-
-function initStorage(){
-  if(!storage && currentUser) storage = firebase.storage();
-}
-
-function getFileIcon(name){
-  const ext = name.split('.').pop().toLowerCase();
-  if(['pdf'].includes(ext)) return '📄';
-  if(['png','jpg','jpeg','gif','webp'].includes(ext)) return '🖼️';
-  if(['doc','docx'].includes(ext)) return '📝';
-  if(['xls','xlsx'].includes(ext)) return '📊';
-  if(['ppt','pptx'].includes(ext)) return '📽️';
-  return '📎';
-}
-
-function formatFileSize(bytes){
-  if(bytes < 1024) return bytes+'B';
-  if(bytes < 1024*1024) return (bytes/1024).toFixed(1)+'KB';
-  return (bytes/(1024*1024)).toFixed(2)+'MB';
-}
-
-function handleDrop(e){
-  e.preventDefault();
-  document.getElementById('drop-zone').classList.remove('dragover');
-  const files = Array.from(e.dataTransfer.files);
-  uploadFiles(files);
-}
-
-function handleFileSelect(e){
-  const files = Array.from(e.target.files);
-  uploadFiles(files);
-  e.target.value='';
-}
-
-function uploadFiles(files){
-  if(!currentUser){ showToast('⚠ Connecte-toi d\'abord','red'); return; }
-  initStorage();
-  const matiere = document.getElementById('upload-matiere').value.trim();
-  const desc = document.getElementById('upload-desc').value.trim();
-
-  files.forEach(file => {
-    if(file.size > 50*1024*1024){ showToast('⚠ '+file.name+' dépasse 50MB','red'); return; }
-
-    const fileId = Date.now().toString() + '_' + Math.random().toString(36).slice(2);
-    const path = `users/${currentUser.uid}/${fileId}_${file.name}`;
-    const ref = storage.ref(path);
-
-    // Show progress
-    const progId = 'prog_'+fileId;
-    const uploadEl = document.createElement('div');
-    uploadEl.id = progId;
-    uploadEl.innerHTML = `<div class="file-item">
-      <div class="file-icon">${getFileIcon(file.name)}</div>
-      <div style="flex:1">
-        <div class="file-name">${file.name}</div>
-        <div class="file-progress"><div class="file-progress-bar" id="bar_${fileId}" style="width:0%"></div></div>
-        <div class="file-meta" id="pct_${fileId}">Démarrage...</div>
-      </div>
-    </div>`;
-    document.getElementById('upload-list').appendChild(uploadEl);
-
-    const uploadTask = ref.put(file, {
-      customMetadata: { matiere, desc, originalName: file.name, uploadedAt: new Date().toISOString() }
-    });
-
-    uploadTask.on('state_changed',
-      snap => {
-        const pct = Math.round(snap.bytesTransferred/snap.totalBytes*100);
-        const barEl = document.getElementById('bar_'+fileId);
-        const pctEl = document.getElementById('pct_'+fileId);
-        if(barEl) barEl.style.width = pct+'%';
-        if(pctEl) pctEl.textContent = pct+'% — '+formatFileSize(snap.bytesTransferred)+' / '+formatFileSize(snap.totalBytes);
-      },
-      err => {
-        const progEl = document.getElementById(progId);
-        if(progEl) progEl.remove();
-        showToast('❌ Erreur upload : '+file.name,'red');
-        console.error(err);
-      },
-      async () => {
-        const url = await uploadTask.snapshot.ref.getDownloadURL();
-        const meta = await uploadTask.snapshot.ref.getMetadata();
-
-        // Save metadata to Firestore
-        if(!state.files) state.files = [];
-        state.files.unshift({
-          id: fileId,
-          name: file.name,
-          path,
-          url,
-          size: file.size,
-          type: file.type,
-          matiere,
-          desc,
-          uploadedAt: new Date().toISOString()
-        });
-        save();
-
-        const progEl = document.getElementById(progId);
-        if(progEl) progEl.remove();
-
-        renderFiles();
-        updateStorageUsage();
-        showToast('✅ '+file.name+' uploadé !');
-      }
-    );
-  });
-}
-
-function renderFiles(){
-  const list = document.getElementById('file-list');
-  if(!state.files || !state.files.length){
-    list.innerHTML = '<div class="empty-log" style="padding:40px 0">Aucun fichier — glisse un fichier dans la zone ci-dessus !</div>';
-    return;
-  }
-
-  // Update matière filter options
-  const filterSel = document.getElementById('file-filter-matiere');
-  if(filterSel){
-    const currentFilter = filterSel.value;
-    const matieres = [...new Set(state.files.map(f=>f.matiere).filter(Boolean))];
-    filterSel.innerHTML = '<option value="">Toutes les matières</option>' +
-      matieres.map(m=>'<option value="'+m+'" '+(m===currentFilter?'selected':'')+'>'+m+'</option>').join('');
-  }
-
-  // Filter & sort
-  let files = [...state.files];
-  const currentFilter = filterSel ? filterSel.value : '';
-  if(currentFilter) files = files.filter(f=>f.matiere===currentFilter);
-  const sortEl = document.getElementById('file-sort');
-  const sort = sortEl ? sortEl.value : 'date';
-  if(sort==='name') files.sort((a,b)=>a.name.localeCompare(b.name));
-  else if(sort==='size') files.sort((a,b)=>b.size-a.size);
-  else files.sort((a,b)=>b.uploadedAt.localeCompare(a.uploadedAt));
-
-  // Update count
-  const countEl = document.getElementById('files-count');
-  if(countEl) countEl.textContent = '('+files.length+')';
-
-  // Update summary stats
-  const statsEl = document.getElementById('files-stats');
-  if(statsEl && state.files.length){
-    const byType = {};
-    state.files.forEach(f => {
-      const ext = f.name.split('.').pop().toLowerCase();
-      const type = ['pdf'].includes(ext)?'PDF':['png','jpg','jpeg','gif','webp'].includes(ext)?'Images':['doc','docx'].includes(ext)?'Word':['xls','xlsx'].includes(ext)?'Excel':'Autres';
-      byType[type] = (byType[type]||0)+1;
-    });
-    statsEl.innerHTML = Object.entries(byType).map(([type,count])=>
-      '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:.72rem">'
-      +'<span style="color:var(--text2)">'+type+'</span>'
-      +'<span style="color:var(--text)">'+count+' fichier'+(count>1?'s':'')+'</span></div>'
-    ).join('') + '<div style="display:flex;justify-content:space-between;padding:6px 0;font-family:var(--mono);font-size:.72rem;margin-top:2px">'
-      +'<span style="color:var(--text3)">Total</span>'
-      +'<span style="color:var(--amber);font-weight:600">'+state.files.length+' fichier'+(state.files.length>1?'s':'')+'</span></div>';
-  }
-
-  list.innerHTML = files.map(f => {
-    const date = new Date(f.uploadedAt).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'});
-    const isPdf = f.name.toLowerCase().endsWith('.pdf');
-    const isImg = /\.(png|jpg|jpeg|gif|webp)$/i.test(f.name);
-    const nameEsc = f.name.replace(/'/g,"\\'");
-    const pathEsc = f.path.replace(/'/g,"\\'");
-    const pdfBtn = isPdf ? '<button class="btn btn-teal" style="font-size:.75rem;padding:5px 12px" onclick="openPdf(\''+f.url+'\',\''+nameEsc+'\')">👁 Aperçu</button>' : '';
-    const imgBtn = isImg ? '<button class="btn btn-teal" style="font-size:.75rem;padding:5px 12px" onclick="window.open(\''+f.url+'\',\'_blank\')">🖼 Voir</button>' : '';
-    const mb = f.matiere ? '<span class="mb">'+f.matiere+'</span>' : '';
-    const desc = f.desc ? '<span style="color:var(--text2)">'+f.desc+'</span>' : '';
-    const color = getColor(f.matiere||'');
-
-    return '<div class="file-item" style="border-left:3px solid '+color+'">'
-      + '<div class="file-icon">'+getFileIcon(f.name)+'</div>'
-      + '<div style="flex:1;min-width:0">'
-      +   '<div class="file-name">'+f.name+'</div>'
-      +   '<div class="file-meta">'+mb+' <span>'+formatFileSize(f.size)+'</span> <span>'+date+'</span>'+desc+'</div>'
-      + '</div>'
-      + '<div style="display:flex;gap:5px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end">'
-      +   pdfBtn + imgBtn
-      +   '<a href="'+f.url+'" target="_blank" download="'+f.name+'" class="btn btn-muted" style="font-size:.75rem;padding:5px 12px">⬇</a>'
-      +   '<button class="icon-btn del" onclick="deleteFile(\''+f.id+'\',\''+pathEsc+'\')">✕</button>'
-      + '</div>'
-      + '</div>';
-  }).join('');
-}
-
-function openPdf(url, name){
-  document.getElementById('pdf-modal-title').textContent = name;
-  document.getElementById('pdf-iframe').src = url;
-  document.getElementById('pdf-download-btn').href = url;
-  document.getElementById('pdf-download-btn').download = name;
-  document.getElementById('pdf-modal').classList.add('open');
-}
-
-function openImg(url, name){
-  window.open(url, '_blank');
-}
-
-function closePdfModal(){
-  document.getElementById('pdf-modal').classList.remove('open');
-  document.getElementById('pdf-iframe').src = '';
-}
-
-async function deleteFile(id, path){
-  if(!confirm('Supprimer ce fichier définitivement ?')) return;
-  initStorage();
-  try {
-    await storage.ref(path).delete();
-  } catch(e){ console.warn('Storage delete:', e); }
-  state.files = (state.files||[]).filter(f=>f.id!==id);
-  save(); renderFiles(); updateStorageUsage();
-  showToast('✓ Fichier supprimé');
-}
-
-async function updateStorageUsage(){
-  if(!state.files || !state.files.length){
-    document.getElementById('storage-text').textContent = '0 MB / 2.5 GB';
-    document.getElementById('storage-bar').style.width = '0%';
-    return;
-  }
-  const totalBytes = state.files.reduce((a,f)=>a+(f.size||0),0);
-  const totalMB = totalBytes/(1024*1024);
-  const pct = Math.min(100,(totalMB/2560)*100);
-  document.getElementById('storage-text').textContent = totalMB.toFixed(1)+' MB / 2 500 MB';
-  document.getElementById('storage-bar').style.width = pct+'%';
-  document.getElementById('storage-bar').style.background = pct>80?'var(--rose)':pct>60?'var(--amber)':'linear-gradient(90deg, var(--indigo), var(--teal))';
-}
-
-let histDate = new Date();
-let histSelectedDay = null;
 
 function changeHistMonth(d){ histDate.setMonth(histDate.getMonth()+d); renderHistCalendar(); }
 function histGoToday(){ histDate = new Date(); histSelectedDay = null; renderHistCalendar(); }
