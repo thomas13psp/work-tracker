@@ -613,102 +613,265 @@ textarea.input-field { resize: vertical; }
 /* ---------------------------------------
    POMODORO
 /* ------------------------------ */
-.pom-display {
-  font-family: var(--display);
-  font-size: 5.5rem;
-  font-style: italic;
-  line-height: 1;
-  letter-spacing: 2px;
-  transition: color .4s;
-  text-align: center;
-}
-.pom-work   { color: var(--sage); }
-.pom-break  { color: var(--teal); }
-.pom-long   { color: var(--lav); }
-.pom-done   { color: var(--amber); }
-
-.pom-ring {
-  width: 200px; height: 200px;
-  margin: 0 auto 16px;
+/* === POMODORO REDESIGN === */
+.pom-card {
+  background: linear-gradient(145deg, var(--surface) 0%, var(--surface2) 100%);
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  padding: 28px 32px 24px;
   position: relative;
+  overflow: hidden;
 }
-.pom-ring svg { transform: rotate(-90deg); }
-.pom-ring-bg { stroke: var(--surface3); }
-.pom-ring-fg { stroke: var(--sage); stroke-linecap: round; transition: stroke-dashoffset .5s ease, stroke .4s; }
-.pom-ring-label {
+.pom-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--sage), var(--teal), var(--indigo));
+  border-radius: 20px 20px 0 0;
+}
+.pom-card.break { border-color: var(--teal); }
+.pom-card.break::before { background: linear-gradient(90deg, var(--teal), var(--lav)); }
+.pom-card.long-break::before { background: linear-gradient(90deg, var(--lav), var(--rose)); }
+
+.pom-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.pom-phase-badge {
+  font-family: var(--mono);
+  font-size: .72rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 5px 14px;
+  border-radius: 100px;
+  background: var(--sage-d);
+  border: 1px solid rgba(94,148,120,.3);
+  color: var(--sage);
+  transition: all .4s;
+}
+.pom-phase-badge.break { background: rgba(72,136,168,.12); border-color: rgba(72,136,168,.3); color: var(--teal); }
+.pom-phase-badge.long-break { background: rgba(120,120,192,.12); border-color: rgba(120,120,192,.3); color: var(--lav); }
+
+.pom-cycles-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.pom-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--border2);
+  transition: all .3s;
+}
+.pom-dot.done { background: var(--sage); border-color: var(--sage); box-shadow: 0 0 6px rgba(94,148,120,.4); }
+.pom-dot.active { border-color: var(--sage); background: rgba(94,148,120,.2); animation: pomPulse 1.2s ease-in-out infinite; }
+
+.pom-session-count {
+  font-family: var(--mono);
+  font-size: .65rem;
+  color: var(--text3);
+  letter-spacing: 1px;
+}
+
+.pom-center {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+.pom-ring-wrap {
+  position: relative;
+  width: 240px;
+  height: 240px;
+}
+.pom-svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+.pom-track {
+  fill: none;
+  stroke: var(--surface3);
+  stroke-width: 10;
+}
+.pom-progress {
+  fill: none;
+  stroke: var(--sage);
+  stroke-width: 10;
+  stroke-linecap: round;
+  transition: stroke-dashoffset .8s cubic-bezier(.4,0,.2,1), stroke .4s;
+  filter: drop-shadow(0 0 6px var(--sage));
+}
+.pom-glow {
+  fill: none;
+  stroke: var(--sage);
+  stroke-width: 3;
+  stroke-linecap: round;
+  opacity: .25;
+  filter: blur(4px);
+  transition: stroke-dashoffset .8s cubic-bezier(.4,0,.2,1), stroke .4s;
+}
+.pom-center-content {
   position: absolute;
   inset: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 4px;
 }
-.pom-ring-time {
+.pom-time {
   font-family: var(--display);
-  font-size: 2.5rem;
+  font-size: 4rem;
   font-style: italic;
   color: var(--text);
   line-height: 1;
+  letter-spacing: 2px;
+  transition: color .4s;
 }
-.pom-ring-type {
+.pom-time.running { color: var(--sage); text-shadow: 0 0 30px rgba(94,148,120,.3); }
+.pom-time.break { color: var(--teal); text-shadow: 0 0 30px rgba(72,136,168,.3); }
+.pom-label {
   font-family: var(--mono);
-  font-size: .65rem;
+  font-size: .62rem;
   color: var(--text3);
-  letter-spacing: 1.5px;
+  letter-spacing: 2.5px;
   text-transform: uppercase;
-  margin-top: 4px;
 }
-.pom-cycles {
-  display: flex;
-  justify-content: center;
-  gap: 6px;
-  margin-top: 12px;
+.pom-elapsed {
+  font-family: var(--mono);
+  font-size: .6rem;
+  color: var(--sage);
+  opacity: .7;
+  margin-top: 2px;
 }
-.pom-dot {
-  width: 10px; height: 10px;
-  border-radius: 50%;
-  border: 1.5px solid var(--border2);
-  transition: all .3s;
-}
-.pom-dot.done { background: var(--sage); border-color: var(--sage); }
-.pom-dot.active { border-color: var(--sage); background: rgba(110,148,112,.3); animation: pomPulse 1s ease-in-out infinite; }
-@keyframes pomPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.2)} }
 
-.pom-settings {
+.pom-fields {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.pom-input { flex: 1; }
+
+.pom-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.pom-ctrl-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: all .2s;
+  border: none;
+  background: transparent;
+  color: var(--text2);
+  font-family: var(--body);
+}
+.pom-ctrl-btn:hover { transform: scale(1.06); color: var(--text); }
+.pom-ctrl-main {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--sage), var(--teal));
+  color: #0a1a0c;
+  font-size: 1.6rem;
+  box-shadow: 0 8px 24px rgba(94,148,120,.35);
+  flex-direction: row;
+  gap: 0;
+}
+.pom-ctrl-main:hover { transform: scale(1.08); box-shadow: 0 10px 32px rgba(94,148,120,.5); }
+.pom-ctrl-main.paused { background: linear-gradient(135deg, var(--amber), #c09050); color: #16090a; box-shadow: 0 8px 24px rgba(176,128,64,.35); }
+.pom-ctrl-main.break-mode { background: linear-gradient(135deg, var(--teal), var(--lav)); color: #080e1a; box-shadow: 0 8px 24px rgba(72,136,168,.35); }
+.pom-ctrl-secondary {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: 1px solid var(--border2) !important;
+  font-size: 1.1rem;
+}
+.pom-ctrl-secondary:hover { background: var(--surface3); border-color: var(--text2) !important; }
+.pom-ctrl-label {
+  font-family: var(--mono);
+  font-size: .55rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text3);
+}
+.pom-ctrl-main .pom-ctrl-label { display: none; }
+
+.pom-live-log {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  padding: 8px 16px;
+  background: var(--sage-d);
+  border: 1px solid rgba(94,148,120,.25);
+  border-radius: 100px;
+  font-family: var(--mono);
+  font-size: .68rem;
+  color: var(--sage);
+  margin-bottom: 16px;
+  animation: fadeIn .3s ease;
+}
+.pom-live-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--sage);
+  animation: pulse 1.4s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@keyframes fadeIn { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:none} }
+
+.pom-settings-bar {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.pom-setting-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   background: var(--surface2);
   border: 1px solid var(--border);
-  border-radius: var(--r);
-  padding: 14px 16px;
-  margin-top: 16px;
-}
-.pom-setting-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 6px 0;
-  border-bottom: 1px solid var(--border);
-  gap: 10px;
-}
-.pom-setting-row:last-child { border-bottom: none; }
-.pom-setting-label { font-family: var(--mono); font-size: .68rem; color: var(--text2); flex: 1; }
-.pom-number {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.pom-num-btn {
-  background: var(--surface3);
-  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 5px 12px;
+  font-family: var(--mono);
+  font-size: .72rem;
   color: var(--text2);
-  width: 24px; height: 24px;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: .85rem;
-  display: flex; align-items: center; justify-content: center;
-  transition: all .15s;
 }
-.pom-num-btn:hover { border-color: var(--border2); color: var(--text); }
-.pom-num-val { font-family: var(--mono); font-size: .85rem; color: var(--text); min-width: 36px; text-align: center; }
+.pom-chip-btn {
+  background: none;
+  border: none;
+  color: var(--text2);
+  cursor: pointer;
+  font-size: .9rem;
+  padding: 0 2px;
+  line-height: 1;
+  transition: color .15s;
+}
+.pom-chip-btn:hover { color: var(--text); }
+.pom-chip-val { color: var(--text); font-weight: 600; min-width: 22px; text-align: center; }
+.pom-chip-unit { color: var(--text3); font-size: .62rem; }
+
+@media (max-width: 480px) {
+  .pom-ring-wrap { width: 180px; height: 180px; }
+  .pom-time { font-size: 3rem; }
+  .pom-card { padding: 20px 16px; }
+}
+
+/* Garder les anciens styles pour compat */
+@keyframes pomPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.15)} }
 
 /* ---------------------------------------
    SONS AMBIANTS
@@ -1241,62 +1404,91 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
       <div class="grid">
 
         <!-- Pomodoro (déplacé ici depuis Outils) -->
-        <div class="card sage col-1">
-          <div class="card-title">🍅 Pomodoro — Session de travail</div>
-          <div class="pom-ring">
-            <svg width="200" height="200" viewBox="0 0 200 200">
-              <circle class="pom-ring-bg" cx="100" cy="100" r="88" fill="none" stroke-width="8"/>
-              <circle class="pom-ring-fg" id="pom-ring-fg" cx="100" cy="100" r="88" fill="none" stroke-width="8"
-                stroke-dasharray="553" stroke-dashoffset="0"/>
-            </svg>
-            <div class="pom-ring-label">
-              <div class="pom-ring-time" id="pom-display">25:00</div>
-              <div class="pom-ring-type" id="pom-type-label">TRAVAIL</div>
+        <!-- POMODORO REDESIGN -->
+        <div class="col-full" style="grid-column:1/-1">
+          <div class="pom-card">
+
+            <!-- Header avec type et cycles -->
+            <div class="pom-header">
+              <div class="pom-phase-badge" id="pom-phase-badge">🍅 TRAVAIL</div>
+              <div class="pom-cycles-row" id="pom-cycles"></div>
+              <div class="pom-session-count" id="pom-session-count">Session 1 / 4</div>
             </div>
-          </div>
-          <div class="pom-cycles" id="pom-cycles"></div>
 
-          <!-- Matière + note -->
-          <div style="display:flex;gap:8px;margin-top:12px">
-            <input class="input-field" id="pom-subject" placeholder="Matière (ex: Maths)" style="flex:1.2">
-            <input class="input-field" id="pom-note" placeholder="Note..." style="flex:1">
-          </div>
-
-          <div class="btn-row" style="justify-content:center">
-            <button class="btn btn-green" id="pom-btn" onclick="togglePomodoro()">▶ Démarrer</button>
-            <button class="btn btn-muted" onclick="resetPomodoro()">↺ Reset</button>
-            <button class="btn btn-muted" onclick="skipPomodoro()" title="Passer à la phase suivante">⏭</button>
-          </div>
-
-          <!-- Info enregistrement -->
-          <div id="pom-log-info" style="display:none;margin-top:10px;padding:8px 12px;background:var(--sage-d);border:1px solid rgba(94,148,120,.3);border-radius:var(--r-sm);font-family:var(--mono);font-size:.68rem;color:var(--sage);text-align:center"></div>
-
-          <div class="pom-settings">
-            <div class="section-sub" style="margin-bottom:8px">Durées (minutes)</div>
-            <div class="pom-setting-row">
-              <span class="pom-setting-label">🍅 Travail</span>
-              <div class="pom-number">
-                <button class="pom-num-btn" onclick="adjPom('work',-5)">−</button>
-                <span class="pom-num-val" id="pom-work-val">25</span>
-                <button class="pom-num-btn" onclick="adjPom('work',5)">+</button>
+            <!-- Zone centrale : anneau + timer -->
+            <div class="pom-center">
+              <div class="pom-ring-wrap">
+                <svg class="pom-svg" viewBox="0 0 220 220">
+                  <!-- Fond -->
+                  <circle class="pom-track" cx="110" cy="110" r="96"/>
+                  <!-- Progression -->
+                  <circle class="pom-progress" id="pom-ring-fg" cx="110" cy="110" r="96"
+                    stroke-dasharray="603" stroke-dashoffset="0"/>
+                  <!-- Glow -->
+                  <circle class="pom-glow" id="pom-glow" cx="110" cy="110" r="96"
+                    stroke-dasharray="603" stroke-dashoffset="0"/>
+                </svg>
+                <div class="pom-center-content">
+                  <div class="pom-time" id="pom-display">25:00</div>
+                  <div class="pom-label" id="pom-type-label">TRAVAIL</div>
+                  <div class="pom-elapsed" id="pom-elapsed-label"></div>
+                </div>
               </div>
             </div>
-            <div class="pom-setting-row">
-              <span class="pom-setting-label">☕ Pause courte</span>
-              <div class="pom-number">
-                <button class="pom-num-btn" onclick="adjPom('short',-1)">−</button>
-                <span class="pom-num-val" id="pom-short-val">5</span>
-                <button class="pom-num-btn" onclick="adjPom('short',1)">+</button>
+
+            <!-- Matière + Note -->
+            <div class="pom-fields">
+              <input class="input-field pom-input" id="pom-subject" placeholder="📚 Matière (ex: Maths)">
+              <input class="input-field pom-input" id="pom-note" placeholder="📝 Note...">
+            </div>
+
+            <!-- Boutons principaux -->
+            <div class="pom-controls">
+              <button class="pom-ctrl-btn pom-ctrl-secondary" onclick="savePomAndStop()" title="Arrêter et enregistrer">
+                <span>✕</span>
+                <span class="pom-ctrl-label">Arrêter</span>
+              </button>
+              <button class="pom-ctrl-btn pom-ctrl-main" id="pom-btn" onclick="togglePomodoro()">
+                <span id="pom-btn-icon">▶</span>
+                <span class="pom-ctrl-label" id="pom-btn-label">Démarrer</span>
+              </button>
+              <button class="pom-ctrl-btn pom-ctrl-secondary" onclick="skipPomodoro()" title="Passer à la phase suivante">
+                <span>⏭</span>
+                <span class="pom-ctrl-label">Passer</span>
+              </button>
+            </div>
+
+            <!-- Barre de log en temps réel -->
+            <div class="pom-live-log" id="pom-log-info" style="display:none">
+              <div class="pom-live-dot"></div>
+              <span id="pom-live-text"></span>
+            </div>
+
+            <!-- Paramètres compacts -->
+            <div class="pom-settings-bar">
+              <div class="pom-setting-chip">
+                <span>🍅</span>
+                <button class="pom-chip-btn" onclick="adjPom('work',-5)">−</button>
+                <span class="pom-chip-val" id="pom-work-val">25</span>
+                <button class="pom-chip-btn" onclick="adjPom('work',5)">+</button>
+                <span class="pom-chip-unit">min</span>
+              </div>
+              <div class="pom-setting-chip">
+                <span>☕</span>
+                <button class="pom-chip-btn" onclick="adjPom('short',-1)">−</button>
+                <span class="pom-chip-val" id="pom-short-val">5</span>
+                <button class="pom-chip-btn" onclick="adjPom('short',1)">+</button>
+                <span class="pom-chip-unit">min</span>
+              </div>
+              <div class="pom-setting-chip">
+                <span>🌿</span>
+                <button class="pom-chip-btn" onclick="adjPom('long',-5)">−</button>
+                <span class="pom-chip-val" id="pom-long-val">15</span>
+                <button class="pom-chip-btn" onclick="adjPom('long',5)">+</button>
+                <span class="pom-chip-unit">min</span>
               </div>
             </div>
-            <div class="pom-setting-row">
-              <span class="pom-setting-label">🌿 Grande pause</span>
-              <div class="pom-number">
-                <button class="pom-num-btn" onclick="adjPom('long',-5)">−</button>
-                <span class="pom-num-val" id="pom-long-val">15</span>
-                <button class="pom-num-btn" onclick="adjPom('long',5)">+</button>
-              </div>
-            </div>
+
           </div>
         </div>
 
@@ -2007,143 +2199,203 @@ function applyTemplate(i){
 /* --------------------------------------------------
    POMODORO
 /* ------------------------------ */
-let pomSettings={work:25,short:5,long:15};
-let pomState={
-  active:false,
-  type:'work', // 'work'|'short'|'long'
-  elapsed:0,
-  cyclesCompleted:0,
-  interval:null,
-  autoLoggedSecs:0
+const POM_CYCLES = 4;
+const CIRCUMFERENCE = 603; // 2*PI*96
+let pomSettings = {work:25, short:5, long:15};
+let pomState = {
+  active: false,
+  type: 'work',
+  elapsed: 0,
+  cyclesCompleted: 0,
+  interval: null,
+  autoLoggedSecs: 0,
+  startedAt: null
 };
-const POM_CYCLES=4; // cycles before long break
 
-function pomDuration(){
-  if(pomState.type==='work') return pomSettings.work*60;
-  if(pomState.type==='short') return pomSettings.short*60;
-  return pomSettings.long*60;
+function pomDuration(){ return pomState.type==='work'?pomSettings.work*60:pomState.type==='short'?pomSettings.short*60:pomSettings.long*60; }
+function pomColor(){ return pomState.type==='work'?'var(--sage)':pomState.type==='short'?'var(--teal)':'var(--lav)'; }
+function pomLabel(){ return pomState.type==='work'?'TRAVAIL':pomState.type==='short'?'PAUSE':'GRANDE PAUSE'; }
+function pomBadgeText(){ return pomState.type==='work'?'🍅 TRAVAIL':pomState.type==='short'?'☕ PAUSE':'🌿 GRANDE PAUSE'; }
+function pomGetSub(){ return (document.getElementById('pom-subject')||{}).value?.trim()||'Pomodoro'; }
+function pomGetNote(){ return (document.getElementById('pom-note')||{}).value?.trim()||''; }
+
+// --- Crash recovery via localStorage ---
+function pomSaveLocal(){
+  if(!pomState.active || pomState.type!=='work') return;
+  localStorage.setItem('pom_crash', JSON.stringify({
+    startedAt: pomState.startedAt,
+    elapsed: pomState.elapsed,
+    autoLoggedSecs: pomState.autoLoggedSecs,
+    subject: pomGetSub(),
+    note: pomGetNote(),
+    type: pomState.type,
+    cyclesCompleted: pomState.cyclesCompleted
+  }));
 }
-function pomColors(){
-  if(pomState.type==='work') return 'var(--sage)';
-  if(pomState.type==='short') return 'var(--teal)';
-  return 'var(--lav)';
-}
-function pomTypeLabel(){
-  if(pomState.type==='work') return 'TRAVAIL';
-  if(pomState.type==='short') return 'PAUSE';
-  return 'GRANDE PAUSE';
+function pomRestoreAfterCrash(){
+  try {
+    const saved = localStorage.getItem('pom_crash');
+    if(!saved) return;
+    const d = JSON.parse(saved);
+    if(!d.startedAt) return;
+    // Calculate real elapsed since startedAt
+    const realElapsed = Math.floor((Date.now() - d.startedAt) / 1000);
+    // Only restore if within reasonable bounds (< duration + 5min)
+    if(realElapsed > (pomSettings.work*60 + 300)) {
+      // Too long - just log what we can
+      const dur = pomSettings.work * 60;
+      const toLog = Math.min(realElapsed, dur) - (d.autoLoggedSecs||0);
+      if(toLog >= 60) {
+        state.log.unshift({date:localDate(), seconds:toLog, pauseSeconds:0, note:'🍅 Pomodoro (reprise)', subject:d.subject||'Pomodoro'});
+        save(); renderLog(); updateGoalProgress(); renderRecap();
+        showToast('Pomodoro restauré : +'+fmtHM(toLog)+' enregistrées');
+      }
+      localStorage.removeItem('pom_crash');
+      return;
+    }
+    if(d.subject) { const el=document.getElementById('pom-subject'); if(el) el.value=d.subject; }
+    if(d.note) { const el=document.getElementById('pom-note'); if(el) el.value=d.note; }
+    pomState.elapsed = Math.min(realElapsed, pomDuration());
+    pomState.autoLoggedSecs = d.autoLoggedSecs || 0;
+    pomState.cyclesCompleted = d.cyclesCompleted || 0;
+    pomState.startedAt = d.startedAt;
+    showToast('🍅 Pomodoro restauré — '+ fmtHM(pomState.elapsed) +' récupérées');
+    localStorage.removeItem('pom_crash');
+  } catch(e) { localStorage.removeItem('pom_crash'); }
 }
 
 function togglePomodoro(){
   if(!pomState.active){
-    pomState.active=true;
-    pomState.interval=setInterval(tickPomodoro,1000);
-    document.getElementById('pom-btn').textContent='⏸ Pause';
-    document.getElementById('pom-btn').className='btn btn-amber';
-    if(pomState.type==='work') showToast('🍅 Pomodoro démarré — '+pomSettings.work+' min de travail !');
-    else showToast('☕ Pause '+pomSettings.short+' min');
-  }else{
-    pomState.active=false;
+    pomState.active = true;
+    pomState.startedAt = Date.now() - pomState.elapsed * 1000;
+    pomState.interval = setInterval(tickPomodoro, 1000);
+    document.getElementById('pom-btn').className = 'pom-ctrl-btn pom-ctrl-main paused';
+    document.getElementById('pom-btn-icon').textContent = '⏸';
+    document.getElementById('pom-btn-label').textContent = 'Pause';
+    document.getElementById('recap-pomodoro').style.display = 'flex';
+    updatePomDisplay();
+  } else {
+    pomState.active = false;
     clearInterval(pomState.interval);
-    document.getElementById('pom-btn').textContent='▶ Reprendre';
-    document.getElementById('pom-btn').className='btn btn-green';
+    document.getElementById('pom-btn').className = 'pom-ctrl-btn pom-ctrl-main';
+    document.getElementById('pom-btn-icon').textContent = '▶';
+    document.getElementById('pom-btn-label').textContent = 'Reprendre';
+    localStorage.removeItem('pom_crash');
   }
-  document.getElementById('recap-pomodoro').style.display=pomState.active?'flex':'none';
 }
 
 function tickPomodoro(){
   pomState.elapsed++;
+  pomSaveLocal();
   updatePomDisplay();
 
-  // Afficher le temps écoulé dans le panneau info
+  // Live info bar
   const infoEl = document.getElementById('pom-log-info');
+  const liveEl = document.getElementById('pom-live-text');
   if(infoEl && pomState.type === 'work'){
-    const sub = document.getElementById('pom-subject') ? document.getElementById('pom-subject').value.trim() : '';
+    const sub = pomGetSub();
     const elapsed = fmtHM(pomState.elapsed);
-    const logged = fmtHM(pomState.autoLoggedSecs||0);
-    infoEl.style.display = 'block';
-    infoEl.textContent = '⏱ ' + elapsed + ' en cours' + (sub?' — '+sub:'') + (pomState.autoLoggedSecs>0?' · '+logged+' enregistrées':'');
+    infoEl.style.display = 'flex';
+    if(liveEl) liveEl.textContent = elapsed + ' en cours' + (sub && sub!=='Pomodoro'?' — '+sub:'') + (pomState.autoLoggedSecs>0?' · '+fmtHM(pomState.autoLoggedSecs)+' enregistrées':'');
   }
 
-  // AUTO-LOG toutes les 10 min
-  if(settings.autoLog && pomState.type === 'work' && pomState.elapsed > 0 && pomState.elapsed % 600 === 0){
-    const subject = document.getElementById('pom-subject') ? document.getElementById('pom-subject').value.trim() : '';
-    const note = document.getElementById('pom-note') ? document.getElementById('pom-note').value.trim() : '';
-    state.log.unshift({date:localDate(), seconds:600, pauseSeconds:0, note:'🍅 Auto-log Pomodoro'+(note?' — '+note:''), subject});
-    if(!pomState.autoLoggedSecs) pomState.autoLoggedSecs = 0;
+  // Auto-log every 10 min
+  if(pomState.type === 'work' && pomState.elapsed > 0 && pomState.elapsed % 600 === 0){
+    const subject = pomGetSub(), note = pomGetNote();
+    state.log.unshift({date:localDate(), seconds:600, pauseSeconds:0, note:'🍅 Auto-log'+(note?' — '+note:''), subject});
     pomState.autoLoggedSecs += 600;
     save(); renderLog(); updateGoalProgress(); renderRecap(); renderHistCalendar();
-    showToast('⏱ +10min Pomodoro — '+(subject||'enregistrées'));
+    showToast('⏱ +10min — '+(subject!=='Pomodoro'?subject:'Pomodoro'));
   }
 
-  if(pomState.elapsed>=pomDuration()){
-    playAlarm();
-    pomState.active=false;
+  // Phase terminée
+  if(pomState.elapsed >= pomDuration()){
+    pomState.active = false;
     clearInterval(pomState.interval);
+    localStorage.removeItem('pom_crash');
     if(infoEl) infoEl.style.display = 'none';
 
-    if(pomState.type==='work'){
-      const sub = document.getElementById('pom-subject') ? document.getElementById('pom-subject').value.trim()||'Pomodoro' : 'Pomodoro';
-      const note = document.getElementById('pom-note') ? document.getElementById('pom-note').value.trim() : '';
-      const alreadyLogged = pomState.autoLoggedSecs || 0;
-      const remaining = (pomSettings.work * 60) - alreadyLogged;
-      if(remaining > 0){
-        state.log.unshift({date:localDate(),seconds:remaining,pauseSeconds:0,note:'🍅 Pomodoro terminé'+(note?' — '+note:''),subject:sub});
-      }
+    if(pomState.type === 'work'){
+      // Log remaining time
+      const sub = pomGetSub(), note = pomGetNote();
+      const rem = (pomSettings.work * 60) - pomState.autoLoggedSecs;
+      if(rem > 0) state.log.unshift({date:localDate(), seconds:rem, pauseSeconds:0, note:'🍅 Pomodoro terminé'+(note?' — '+note:''), subject:sub});
       pomState.autoLoggedSecs = 0;
-      save();renderLog();updateGoalProgress();renderRecap();renderHistCalendar();
+      save(); renderLog(); updateGoalProgress(); renderRecap(); renderHistCalendar();
       pomState.cyclesCompleted++;
-      const isLong=(pomState.cyclesCompleted%POM_CYCLES===0);
-      pomState.type=isLong?'long':'short';
-      showToast('🎉 Pomodoro terminé ! '+fmtHM(pomSettings.work*60)+' enregistrées pour '+sub);
-    }else{
-      pomState.type='work';
-      showToast('▶ Reprise du travail — nouveau Pomodoro !');
+      const isLong = (pomState.cyclesCompleted % POM_CYCLES === 0);
+      pomState.type = isLong ? 'long' : 'short';
+      // Son de pause (doux)
+      playBreakSound();
+      showToast('🎉 Pomodoro terminé — ' + (isLong ? 'Grande pause !' : 'Pause '+pomSettings.short+'min'));
+    } else {
+      pomState.type = 'work';
+      playAlarm();
+      showToast('▶ C\'est reparti — nouveau Pomodoro !');
     }
-    pomState.elapsed=0;
+
+    pomState.elapsed = 0;
     renderPomCycles();
     updatePomDisplay();
-    document.getElementById('pom-btn').textContent='▶ Démarrer';
-    document.getElementById('pom-btn').className='btn btn-green';
+    document.getElementById('pom-btn').className = 'pom-ctrl-btn pom-ctrl-main';
+    document.getElementById('pom-btn-icon').textContent = '▶';
+    document.getElementById('pom-btn-label').textContent = 'Démarrer';
   }
+}
+
+// Bouton ✕ : enregistre tout et remet à zéro
+function savePomAndStop(){
+  if(!pomState.active && pomState.elapsed === 0){ showToast('⚠ Rien à enregistrer','red'); return; }
+  if(pomState.active){ pomState.active=false; clearInterval(pomState.interval); }
+  if(pomState.type === 'work'){
+    const sub = pomGetSub(), note = pomGetNote();
+    const rem = pomState.elapsed - pomState.autoLoggedSecs;
+    if(rem >= 10) state.log.unshift({date:localDate(), seconds:rem, pauseSeconds:0, note:'🍅 Pomodoro arrêté'+(note?' — '+note:''), subject:sub});
+    if(rem >= 10){ save(); renderLog(); updateGoalProgress(); renderRecap(); renderHistCalendar(); }
+    showToast('✓ '+fmtHM(pomState.elapsed)+' enregistrées — '+(sub!=='Pomodoro'?sub:''));
+  }
+  localStorage.removeItem('pom_crash');
+  resetPomodoro();
 }
 
 function resetPomodoro(){
   pomState.active=false; clearInterval(pomState.interval);
   pomState.elapsed=0; pomState.type='work'; pomState.cyclesCompleted=0;
-  pomState.autoLoggedSecs=0;
-  document.getElementById('pom-btn').textContent='▶ Démarrer';
-  document.getElementById('pom-btn').className='btn btn-green';
+  pomState.autoLoggedSecs=0; pomState.startedAt=null;
+  localStorage.removeItem('pom_crash');
+  const infoEl=document.getElementById('pom-log-info');
+  if(infoEl) infoEl.style.display='none';
   document.getElementById('recap-pomodoro').style.display='none';
+  document.getElementById('pom-btn').className='pom-ctrl-btn pom-ctrl-main';
+  document.getElementById('pom-btn-icon').textContent='▶';
+  document.getElementById('pom-btn-label').textContent='Démarrer';
   updatePomDisplay(); renderPomCycles();
 }
 
 function skipPomodoro(){
-  pomState.active=false; clearInterval(pomState.interval);
-  
-  // Enregistrer le temps partiel si on passe une session de travail en cours
+  if(pomState.active){ pomState.active=false; clearInterval(pomState.interval); }
   if(pomState.type==='work'){
-    const sub = document.getElementById('pom-subject') ? document.getElementById('pom-subject').value.trim()||'Pomodoro' : 'Pomodoro';
-    const note = document.getElementById('pom-note') ? document.getElementById('pom-note').value.trim() : '';
-    const alreadyLogged = pomState.autoLoggedSecs || 0;
-    const remaining = pomState.elapsed - alreadyLogged;
-    if(remaining >= 10){
-      state.log.unshift({date:localDate(), seconds:remaining, pauseSeconds:0, note:'🍅 Pomodoro (écourté)'+(note?' — '+note:''), subject:sub});
+    const sub=pomGetSub(), note=pomGetNote();
+    const rem = pomState.elapsed - pomState.autoLoggedSecs;
+    if(rem >= 10){
+      state.log.unshift({date:localDate(), seconds:rem, pauseSeconds:0, note:'🍅 Pomodoro (écourté)'+(note?' — '+note:''), subject:sub});
       save(); renderLog(); updateGoalProgress(); renderRecap(); renderHistCalendar();
     }
-    pomState.autoLoggedSecs = 0;
-    const infoEl = document.getElementById('pom-log-info');
-    if(infoEl) infoEl.style.display = 'none';
-    pomState.type='short';
+    pomState.autoLoggedSecs=0;
+    const isLong=(pomState.cyclesCompleted%POM_CYCLES===0 && pomState.cyclesCompleted>0);
+    pomState.type=isLong?'long':'short';
+    pomState.cyclesCompleted++;
+    playBreakSound();
   } else {
-    pomState.type='work'; pomState.cyclesCompleted++;
+    pomState.type='work';
   }
-  
-  pomState.elapsed=0;
-  if(pomState.cyclesCompleted%POM_CYCLES===0 && pomState.type==='short') pomState.type='long';
+  pomState.elapsed=0; pomState.startedAt=null;
+  localStorage.removeItem('pom_crash');
+  const infoEl=document.getElementById('pom-log-info'); if(infoEl) infoEl.style.display='none';
   renderPomCycles(); updatePomDisplay();
-  document.getElementById('pom-btn').textContent='▶ Démarrer';
-  document.getElementById('pom-btn').className='btn btn-green';
+  document.getElementById('pom-btn').className='pom-ctrl-btn pom-ctrl-main';
+  document.getElementById('pom-btn-icon').textContent='▶';
+  document.getElementById('pom-btn-label').textContent='Démarrer';
 }
 
 function adjPom(type,delta){
@@ -2154,31 +2406,77 @@ function adjPom(type,delta){
   document.getElementById('pom-short-val').textContent = pomSettings.short;
   document.getElementById('pom-long-val').textContent  = pomSettings.long;
   settings.pomWork=pomSettings.work; settings.pomShort=pomSettings.short; settings.pomLong=pomSettings.long;
-  localStorage.setItem('wt_settings',JSON.stringify(settings));
+  localStorage.setItem('wt_settings', JSON.stringify(settings));
   if(!pomState.active){ pomState.elapsed=0; updatePomDisplay(); }
 }
 
 function updatePomDisplay(){
-  const dur=pomDuration();
-  const rem=Math.max(0,dur-pomState.elapsed);
-  const m=Math.floor(rem/60), s=rem%60;
-  document.getElementById('pom-display').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
-  document.getElementById('pom-type-label').textContent=pomTypeLabel();
-  const fg=document.getElementById('pom-ring-fg');
-  const pct=pomState.elapsed/dur;
-  fg.style.strokeDashoffset=553*(1-pct);
-  fg.style.stroke=pomColors();
+  const dur = pomDuration();
+  const rem = Math.max(0, dur - pomState.elapsed);
+  const m = Math.floor(rem/60), s = rem%60;
+  const timeStr = String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  const color = pomColor();
+
+  const dispEl = document.getElementById('pom-display');
+  if(dispEl){ dispEl.textContent = timeStr; dispEl.className = 'pom-time'+(pomState.active&&pomState.type==='work'?' running':pomState.type!=='work'?' break':''); }
+
+  const typeEl = document.getElementById('pom-type-label');
+  if(typeEl) typeEl.textContent = pomLabel();
+
+  const badgeEl = document.getElementById('pom-phase-badge');
+  if(badgeEl){ badgeEl.textContent = pomBadgeText(); badgeEl.className = 'pom-phase-badge'+(pomState.type==='short'?' break':pomState.type==='long'?' long-break':''); }
+
+  const fg = document.getElementById('pom-ring-fg');
+  const glow = document.getElementById('pom-glow');
+  const pct = pomState.elapsed / dur;
+  const offset = CIRCUMFERENCE * (1 - pct);
+  if(fg){ fg.style.strokeDashoffset = offset; fg.style.stroke = color; fg.style.filter = 'drop-shadow(0 0 6px '+color+')'; }
+  if(glow){ glow.style.strokeDashoffset = offset; glow.style.stroke = color; }
+
+  // Card style
+  const card = document.querySelector('.pom-card');
+  if(card){ card.className = 'pom-card'+(pomState.type==='short'?' break':pomState.type==='long'?' long-break':''); }
+
+  // Elapsed label
+  const elEl = document.getElementById('pom-elapsed-label');
+  if(elEl && pomState.elapsed > 0 && pomState.type==='work') elEl.textContent = fmtHM(pomState.elapsed)+' travaillées';
+  else if(elEl) elEl.textContent = '';
+
+  // Session count
+  const scEl = document.getElementById('pom-session-count');
+  if(scEl) scEl.textContent = 'Session '+(pomState.cyclesCompleted%POM_CYCLES+1)+' / '+POM_CYCLES;
 }
 
 function renderPomCycles(){
-  const c=document.getElementById('pom-cycles');
-  c.innerHTML=Array.from({length:POM_CYCLES},(_,i)=>{
-    const done=i<(pomState.cyclesCompleted%POM_CYCLES);
-    const active=!done && pomState.type==='work' && i===(pomState.cyclesCompleted%POM_CYCLES);
-    return `<div class="pom-dot${done?' done':active?' active':''}"></div>`;
+  const c = document.getElementById('pom-cycles');
+  if(!c) return;
+  c.innerHTML = Array.from({length:POM_CYCLES},(_,i)=>{
+    const done = i < (pomState.cyclesCompleted % POM_CYCLES);
+    const active = !done && pomState.type==='work' && i===(pomState.cyclesCompleted%POM_CYCLES);
+    return '<div class="pom-dot'+(done?' done':active?' active':'')+'"></div>';
   }).join('');
 }
+
+// Son doux de pause (descente)
+function playBreakSound(){
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    [[523,0],[659,.3],[784,.6],[523,.9]].forEach(([freq,delay])=>{
+      const osc=ctx.createOscillator(), g=ctx.createGain();
+      osc.connect(g); g.connect(ctx.destination);
+      osc.type='sine'; osc.frequency.value=freq;
+      g.gain.setValueAtTime(0,ctx.currentTime+delay);
+      g.gain.linearRampToValueAtTime(.18,ctx.currentTime+delay+.06);
+      g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+delay+1.2);
+      osc.start(ctx.currentTime+delay); osc.stop(ctx.currentTime+delay+1.2);
+    });
+  }catch(e){}
+}
+
 renderPomCycles(); updatePomDisplay();
+// Restore crash state after a short delay (state may not be loaded yet)
+setTimeout(pomRestoreAfterCrash, 800);
+
 
 /* --------------------------------------------------
    SONS AMBIANTS
