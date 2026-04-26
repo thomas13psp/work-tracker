@@ -2320,7 +2320,7 @@ function tickPomodoro(){
       showToast('🎉 Pomodoro terminé — ' + (isLong ? 'Grande pause !' : 'Pause '+pomSettings.short+'min'));
     } else {
       pomState.type = 'work';
-      playAlarm();
+      playWorkSound();
       showToast('▶ C\'est reparti — nouveau Pomodoro !');
     }
 
@@ -2447,21 +2447,52 @@ function renderPomCycles(){
   }).join('');
 }
 
-// Son doux de pause (descente)
+// Son fin de travail -> PAUSE (mélodie douce descendante, 3 notes)
 function playBreakSound(){
   try{
-    const ctx=new(window.AudioContext||window.webkitAudioContext)();
-    [[523,0],[659,.3],[784,.6],[523,.9]].forEach(([freq,delay])=>{
+    const ctx = new(window.AudioContext||window.webkitAudioContext)();
+    // 3 notes douces descendantes : Do Mi Sol → signal de repos
+    const notes = [[784,0],[659,.4],[523,.8]];
+    notes.forEach(([freq,delay])=>{
+      const osc=ctx.createOscillator(), g=ctx.createGain();
+      osc.connect(g); g.connect(ctx.destination);
+      osc.type='triangle'; osc.frequency.value=freq;
+      g.gain.setValueAtTime(0, ctx.currentTime+delay);
+      g.gain.linearRampToValueAtTime(0.35, ctx.currentTime+delay+0.05);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+delay+1.6);
+      osc.start(ctx.currentTime+delay);
+      osc.stop(ctx.currentTime+delay+1.6);
+    });
+    // Petit ding final
+    const osc2=ctx.createOscillator(), g2=ctx.createGain();
+    osc2.connect(g2); g2.connect(ctx.destination);
+    osc2.type='sine'; osc2.frequency.value=1047;
+    g2.gain.setValueAtTime(0, ctx.currentTime+1.4);
+    g2.gain.linearRampToValueAtTime(0.2, ctx.currentTime+1.45);
+    g2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+2.8);
+    osc2.start(ctx.currentTime+1.4); osc2.stop(ctx.currentTime+2.8);
+  }catch(e){}
+}
+
+// Son fin de pause -> TRAVAIL (mélodie montante énergique, 4 notes)
+function playWorkSound(){
+  try{
+    const ctx = new(window.AudioContext||window.webkitAudioContext)();
+    // 4 notes montantes : signal de reprise du travail
+    const notes = [[523,0],[659,.25],[784,.5],[1047,.75]];
+    notes.forEach(([freq,delay])=>{
       const osc=ctx.createOscillator(), g=ctx.createGain();
       osc.connect(g); g.connect(ctx.destination);
       osc.type='sine'; osc.frequency.value=freq;
-      g.gain.setValueAtTime(0,ctx.currentTime+delay);
-      g.gain.linearRampToValueAtTime(.18,ctx.currentTime+delay+.06);
-      g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+delay+1.2);
-      osc.start(ctx.currentTime+delay); osc.stop(ctx.currentTime+delay+1.2);
+      g.gain.setValueAtTime(0, ctx.currentTime+delay);
+      g.gain.linearRampToValueAtTime(0.3, ctx.currentTime+delay+0.05);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+delay+1.4);
+      osc.start(ctx.currentTime+delay);
+      osc.stop(ctx.currentTime+delay+1.4);
     });
   }catch(e){}
 }
+
 
 renderPomCycles(); updatePomDisplay();
 // Restore crash state after a short delay (state may not be loaded yet)
