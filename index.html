@@ -1409,7 +1409,6 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
             <div class="pom-header">
               <div class="pom-phase-badge" id="pom-phase-badge">🍅 TRAVAIL</div>
               <div class="pom-cycles-row" id="pom-cycles"></div>
-              <div class="pom-session-count" id="pom-session-count">Session 1 / 4</div>
             </div>
 
             <div class="pom-center">
@@ -2247,6 +2246,7 @@ function pomRestoreAfterCrash(){
 
 function togglePomodoro(){
   if(!pomState.active){
+    // Reprendre ou démarrer — elapsed est conservé
     pomState.active = true;
     pomState.startedAt = Date.now() - pomState.elapsed * 1000;
     pomState.interval = setInterval(tickPomodoro, 1000);
@@ -2256,12 +2256,22 @@ function togglePomodoro(){
     document.getElementById('recap-pomodoro').style.display = 'flex';
     updatePomDisplay();
   } else {
+    // Mettre en pause — elapsed est conservé tel quel
     pomState.active = false;
     clearInterval(pomState.interval);
+    pomState.startedAt = null;
     document.getElementById('pom-btn').className = 'pom-ctrl-btn pom-ctrl-main';
     document.getElementById('pom-btn-icon').textContent = '▶';
     document.getElementById('pom-btn-label').textContent = 'Reprendre';
-    localStorage.removeItem('pom_crash');
+    // Sauvegarder l'état pausé
+    localStorage.setItem('pom_paused', JSON.stringify({
+      elapsed: pomState.elapsed,
+      autoLoggedSecs: pomState.autoLoggedSecs,
+      type: pomState.type,
+      cyclesCompleted: pomState.cyclesCompleted,
+      subject: pomGetSub(),
+      note: pomGetNote()
+    }));
   }
 }
 
@@ -2318,6 +2328,9 @@ function tickPomodoro(){
     updatePomDisplay();
     // Auto-start la phase suivante après 1s
     setTimeout(()=>{
+      if(pomState.active) return; // déjà lancé
+      pomState.elapsed = 0;
+      pomState.autoLoggedSecs = 0;
       pomState.active = true;
       pomState.startedAt = Date.now();
       pomState.interval = setInterval(tickPomodoro, 1000);
@@ -2458,6 +2471,24 @@ function playBreakSound(){
 }
 
 renderPomCycles(); updatePomDisplay();
+// Restore paused state
+try {
+  const paused = localStorage.getItem('pom_paused');
+  if(paused){
+    const d = JSON.parse(paused);
+    pomState.elapsed = d.elapsed || 0;
+    pomState.autoLoggedSecs = d.autoLoggedSecs || 0;
+    pomState.type = d.type || 'work';
+    pomState.cyclesCompleted = d.cyclesCompleted || 0;
+    if(d.subject){ const el=document.getElementById('pom-subject'); if(el) el.value=d.subject; }
+    if(d.note){ const el=document.getElementById('pom-note'); if(el) el.value=d.note; }
+    updatePomDisplay(); renderPomCycles();
+    document.getElementById('pom-btn-icon').textContent = '▶';
+    document.getElementById('pom-btn-label').textContent = 'Reprendre';
+    localStorage.removeItem('pom_paused');
+    showToast('⏸ Pomodoro en pause restauré — '+fmtHM(pomState.elapsed));
+  }
+} catch(e){}
 // Restore crash state after a short delay (state may not be loaded yet)
 setTimeout(pomRestoreAfterCrash, 800);
 
