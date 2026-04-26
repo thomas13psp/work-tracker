@@ -1403,21 +1403,28 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
     <div class="tab-panel active" id="tab-suivi">
       <div class="grid">
 
+        <!-- Pomodoro (déplacé ici depuis Outils) -->
+        <!-- POMODORO REDESIGN -->
         <div class="col-full" style="grid-column:1/-1">
           <div class="pom-card">
 
+            <!-- Header avec type et cycles -->
             <div class="pom-header">
               <div class="pom-phase-badge" id="pom-phase-badge">🍅 TRAVAIL</div>
               <div class="pom-cycles-row" id="pom-cycles"></div>
               <div class="pom-session-count" id="pom-session-count">Session 1 / 4</div>
             </div>
 
+            <!-- Zone centrale : anneau + timer -->
             <div class="pom-center">
               <div class="pom-ring-wrap">
                 <svg class="pom-svg" viewBox="0 0 220 220">
+                  <!-- Fond -->
                   <circle class="pom-track" cx="110" cy="110" r="96"/>
+                  <!-- Progression -->
                   <circle class="pom-progress" id="pom-ring-fg" cx="110" cy="110" r="96"
                     stroke-dasharray="603" stroke-dashoffset="0"/>
+                  <!-- Glow -->
                   <circle class="pom-glow" id="pom-glow" cx="110" cy="110" r="96"
                     stroke-dasharray="603" stroke-dashoffset="0"/>
                 </svg>
@@ -1429,11 +1436,13 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
               </div>
             </div>
 
+            <!-- Matière + Note -->
             <div class="pom-fields">
               <input class="input-field pom-input" id="pom-subject" placeholder="📚 Matière (ex: Maths)">
               <input class="input-field pom-input" id="pom-note" placeholder="📝 Note...">
             </div>
 
+            <!-- Boutons principaux -->
             <div class="pom-controls">
               <button class="pom-ctrl-btn pom-ctrl-secondary" onclick="savePomAndStop()" title="Arrêter et enregistrer">
                 <span>✕</span>
@@ -1449,11 +1458,13 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
               </button>
             </div>
 
+            <!-- Barre de log en temps réel -->
             <div class="pom-live-log" id="pom-log-info" style="display:none">
               <div class="pom-live-dot"></div>
               <span id="pom-live-text"></span>
             </div>
 
+            <!-- Paramètres compacts -->
             <div class="pom-settings-bar">
               <div class="pom-setting-chip">
                 <span>🍅</span>
@@ -1499,6 +1510,7 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
           <div class="stats-row" id="weekly-stats"></div>
         </div>
 
+        <!-- Ajout manuel -->
         <div class="card col-1">
           <div class="card-title">✏ Ajout manuel</div>
           <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center">
@@ -2020,8 +2032,6 @@ let pauseRunning=false,pauseStart=null,pauseElapsed=0,pauseInterval=null;
 let sessionAutoLogged=0;
 let timerIntervals={};
 let calDate=new Date();
-let histDate=new Date();         // <-- CORRECTION ICI
-let histSelectedDay=null;        // <-- CORRECTION ICI
 let editEvId=null,todoFilter='all';
 let breakNotified=false;
 
@@ -2978,7 +2988,7 @@ function renderDayView(){
   let html='<div style="position:relative">';
   if(isToday){const now=new Date(),tm=(now.getHours()-6)*60+now.getMinutes();if(tm>=0){const top=tm*(50/60);html+=`<div class="day-now-line" style="top:${top}px"></div><div class="day-now-dot" style="top:${top}px"></div>`;}}
   for(let h=6;h<=23;h++){
-    const hStr=String(h).padStart(2,'0')+:00';
+    const hStr=String(h).padStart(2,'0')+':00';
     const he=de.filter(e=>e.time&&parseInt(e.time.split(':')[0])===h);
     const ne=h===8?de.filter(e=>!e.time):[];
     const all=[...he,...ne];
