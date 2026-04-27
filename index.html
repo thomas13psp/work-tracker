@@ -2086,7 +2086,8 @@ let pomSettings = {work:25, short:5, long:15};
 let pomState = {
   active: false, type: 'work', elapsed: 0,
   cyclesCompleted: 0, interval: null,
-  startedAt: null, sessionStartedAt: null
+  startedAt: null, sessionStartedAt: null,
+  _autoStartTimer: null
 };
 
 function pomDuration(){ return pomState.type==='work'?pomSettings.work*60:pomState.type==='short'?pomSettings.short*60:pomSettings.long*60; }
@@ -2263,7 +2264,8 @@ function tickPomodoro(){
     renderPomCycles();
     updatePomDisplay();
     // Auto-start phase suivante
-    setTimeout(()=>{
+    pomState._autoStartTimer = setTimeout(()=>{
+      pomState._autoStartTimer = null;
       if(pomState.active) return;
       pomState.elapsed = 0;
       pomState.active = true;
@@ -2282,25 +2284,32 @@ function tickPomodoro(){
 // Bouton ✕ — enregistre le temps partiel et remet à zéro
 function savePomAndStop(){
   if(!pomState.active && pomState.elapsed === 0){ showToast('⚠ Rien à enregistrer', 'red'); return; }
-  if(pomState.active){ pomState.active = false; clearInterval(pomState.interval); pomState.interval = null; pomState.startedAt = null; }
+  // Stopper le timer immédiatement
+  pomState.active = false;
+  clearInterval(pomState.interval);
+  pomState.interval = null;
+  pomState.startedAt = null;
+  // Annuler tout auto-start en attente
+  if(pomState._autoStartTimer){ clearTimeout(pomState._autoStartTimer); pomState._autoStartTimer = null; }
+
   if(pomState.type === 'work' && pomState.elapsed >= 10){
     const sub = pomGetSub(), note = pomGetNote();
     const startTime = pomState.sessionStartedAt || (Date.now() - pomState.elapsed * 1000);
     state.log.unshift({
       date: localDate(), seconds: pomState.elapsed,
-      pauseSeconds: 0, note: note ? note : '',
-      subject: sub, startTime: startTime, isPom: true
+      pauseSeconds: 0, note: note||'',
+      subject: sub, startTime, isPom: true
     });
     save(); renderLog(); updateGoalProgress(); renderRecap(); renderHistCalendar();
     showToast('✓ ' + fmtHM(pomState.elapsed) + ' enregistrées' + (sub && sub !== 'Pomodoro' ? ' — ' + sub : ''));
   }
   pomClearCrash();
-  localStorage.removeItem('pom_paused');
   resetPomodoro();
 }
 
 function resetPomodoro(){
   pomState.active=false; clearInterval(pomState.interval);
+  if(pomState._autoStartTimer){ clearTimeout(pomState._autoStartTimer); pomState._autoStartTimer=null; }
   pomState.elapsed=0; pomState.type='work'; pomState.cyclesCompleted=0;
   pomState.startedAt=null; pomState.sessionStartedAt=null;
   pomClearCrash();
@@ -2315,6 +2324,7 @@ function resetPomodoro(){
 
 function skipPomodoro(){
   if(pomState.active){ pomState.active=false; clearInterval(pomState.interval); pomState.interval=null; pomState.startedAt=null; }
+  if(pomState._autoStartTimer){ clearTimeout(pomState._autoStartTimer); pomState._autoStartTimer=null; }
   if(pomState.type==='work' && pomState.elapsed >= 10){
     const sub=pomGetSub(), note=pomGetNote();
     const startTime = pomState.sessionStartedAt || (Date.now() - pomState.elapsed*1000);
@@ -3366,14 +3376,42 @@ document.addEventListener('keydown',e=>{
 /* --------------------------------------------------
    AUTO SAVE
 /* ------------------------------ */
+// Auto-save toutes les 10min si minuteur actif
 setInterval(()=>{
   if(!DOC_REF) return;
-  const ha=sessionRunning||pauseRunning||state.timers.some(t=>t.running);
-  if(ha){
+  const actif = state.timers.some(t=>t.running);
+  if(actif){
     saveLocal();
     DOC_REF.set(state).then(()=>setSyncStatus('synced','Synchronisé ✓')).catch(()=>setSyncStatus('error','Hors ligne'));
   }
-},20*60*1000);
+}, 10*60*1000);
+
+// Sauvegarde d'urgence avant fermeture/crash
+window.addEventListener('beforeunload', ()=>{
+  // Pomodoro en cours -> sauvegarder le temps partiel
+  if(pomState.active && pomState.type === 'work' && pomState.elapsed >= 30){
+    const sub = pomGetSub(), note = pomGetNote();
+    const startTime = pomState.sessionStartedAt || (Date.now() - pomState.elapsed * 1000);
+    state.log.unshift({
+      date: localDate(), seconds: pomState.elapsed,
+      pauseSeconds: 0, note: note||'', subject: sub,
+      startTime, isPom: true
+    });
+    saveLocal();
+    try { DOC_REF && DOC_REF.set(state); } catch(e){}
+  }
+  // Minuteurs en cours
+  state.timers.forEach(t => {
+    if(t.running && t.startedAt){
+      const real = Math.floor((Date.now()-t.startedAt)/1000);
+      const rem = real - (t.autoLoggedSecs||0);
+      if(rem >= 30){
+        state.log.unshift({date:localDate(), seconds:rem, pauseSeconds:0, note:t.name, subject:t.matiere||''});
+      }
+    }
+  });
+  saveLocal();
+});
 
 /* --------------------------------------------------
    INIT
