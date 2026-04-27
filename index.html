@@ -2017,175 +2017,37 @@ function renderRecap(){
 /* ------------------------------ */
 let sessionRunning=false,sessionStart=null,sessionElapsed=0,sessionInterval=null;
 let pauseRunning=false,pauseStart=null,pauseElapsed=0,pauseInterval=null;
-let sessionAutoLogged=0;
 let timerIntervals={};
 let calDate=new Date();
-let histDate=new Date();         // <-- CORRECTION ICI
-let histSelectedDay=null;        // <-- CORRECTION ICI
+let histDate=new Date();
+let histSelectedDay=null;
 let editEvId=null,todoFilter='all';
 let breakNotified=false;
 
-function toggleSession(){
-  if(!sessionRunning){
-    if(pauseRunning)stopPause();
-    sessionRunning=true;sessionStart=Date.now()-sessionElapsed*1000;
-    sessionInterval=setInterval(tickSession,1000);
-    document.getElementById('session-btn').textContent='⏸ Stop';
-    document.getElementById('session-btn').className='btn btn-amber';
-    const pb=document.getElementById('pause-btn');
-    pb.style.opacity='1';pb.style.cursor='pointer';pb.disabled=false;
-    document.getElementById('session-display').classList.add('running');
-    document.getElementById('session-meta').textContent='Session en cours...';
-    breakNotified=false;
-  }else{
-    sessionRunning=false;clearInterval(sessionInterval);
-    document.getElementById('session-btn').textContent='▶ Reprendre';
-    document.getElementById('session-btn').className='btn btn-green';
-    document.getElementById('session-display').classList.remove('running');
-    document.getElementById('session-meta').textContent='Pausé — '+fmtTime(sessionElapsed);
-  }
-}
-function togglePause(){
-  if(!pauseRunning){
-    if(sessionRunning){sessionRunning=false;clearInterval(sessionInterval);document.getElementById('session-display').classList.remove('running');}
-    pauseRunning=true;pauseStart=Date.now()-pauseElapsed*1000;
-    pauseInterval=setInterval(tickPause,1000);
-    document.getElementById('pause-btn').textContent='▶ Reprendre';
-    document.getElementById('pause-btn').className='btn btn-green';
-    document.getElementById('pause-indicator').style.display='flex';
-    document.getElementById('session-btn').textContent='▶ Reprendre';
-    document.getElementById('session-btn').className='btn btn-green';
-    document.getElementById('session-meta').textContent='☕ Pause...';
-    document.getElementById('break-warning').style.display='none';
-  }else{stopPause();toggleSession();}
-}
-function stopPause(){
-  if(!pauseRunning)return;
-  pauseRunning=false;clearInterval(pauseInterval);
-  document.getElementById('pause-btn').textContent='☕ Pause';
-  document.getElementById('pause-btn').className='btn btn-muted';
-  document.getElementById('pause-indicator').style.display='none';
-}
-function tickSession(){
-  sessionElapsed=Math.floor((Date.now()-sessionStart)/1000);
-  document.getElementById('session-display').textContent=fmtTime(sessionElapsed);
-  updateGoalProgress();renderRecap();
-  // Break reminder
-  if(settings.breakReminder && !breakNotified && sessionElapsed>=settings.breakHours*3600){
-    breakNotified=true;
-    document.getElementById('break-warning').style.display='block';
-    showToast('☕ Tu travailles depuis '+fmtHM(sessionElapsed)+'. Pense à faire une pause !','amber');
-  }
-  // Auto-log (if enabled)
-  if(settings.autoLog && sessionElapsed>0 && sessionElapsed%600===0){
-    const subject=document.getElementById('session-subject').value.trim();
-    const note=document.getElementById('session-note').value.trim();
-    state.log.unshift({date:localDate(),seconds:600,pauseSeconds:0,note:'Auto-log'+(note?' — '+note:''),subject});
-    save();renderLog();updateGoalProgress();renderRecap();renderHistCalendar();
-    showToast('⏱ +10min auto-enregistrées');
-  }
-}
-function tickPause(){
-  pauseElapsed=Math.floor((Date.now()-pauseStart)/1000);
-  document.getElementById('pause-display').textContent=fmtTime(pauseElapsed);
-}
-function resetSession(){
-  if(sessionRunning){sessionRunning=false;clearInterval(sessionInterval);}
-  if(pauseRunning){pauseRunning=false;clearInterval(pauseInterval);}
-  sessionElapsed=0;sessionStart=null;pauseElapsed=0;pauseStart=null;sessionAutoLogged=0;
-  breakNotified=false;
-  document.getElementById('session-display').textContent='00:00:00';
-  document.getElementById('pause-display').textContent='00:00:00';
-  document.getElementById('session-meta').textContent='En attente de démarrage';
-  document.getElementById('session-btn').textContent='▶ Démarrer';
-  document.getElementById('session-btn').className='btn btn-green';
-  const pb=document.getElementById('pause-btn');
-  pb.textContent='☕ Pause';pb.className='btn btn-muted';
-  pb.style.opacity='0.4';pb.style.cursor='not-allowed';pb.disabled=true;
-  document.getElementById('pause-indicator').style.display='none';
-  document.getElementById('session-display').classList.remove('running');
-  document.getElementById('session-note').value='';
-  document.getElementById('session-subject').value='';
-  document.getElementById('break-warning').style.display='none';
-  updateGoalProgress();renderRecap();
-}
-function logSession(){
-  if(sessionElapsed<10){showToast('⚠ Session trop courte','red');return;}
-  if(pauseRunning)stopPause();
-  if(sessionRunning){sessionRunning=false;clearInterval(sessionInterval);}
-  const note=document.getElementById('session-note').value.trim();
-  const subject=document.getElementById('session-subject').value.trim();
-  const al=Math.floor(sessionElapsed/600)*600;
-  const rem=sessionElapsed-al;
-  if(rem>0) state.log.unshift({date:localDate(),seconds:rem,pauseSeconds:pauseElapsed,note,subject});
-  save();renderLog();updateGoalProgress();
-  showToast('✓ '+fmtTime(sessionElapsed)+' enregistrées');
-  resetSession();
-}
-function stopSession(){
-  if(!sessionRunning&&sessionElapsed===0){showToast('⚠ Aucune session','red');return;}
-  if(pauseRunning)stopPause();
-  if(sessionRunning){sessionRunning=false;clearInterval(sessionInterval);}
-  const note=document.getElementById('session-note').value.trim();
-  const subject=document.getElementById('session-subject').value.trim();
-  // Enregistre TOUT le temps non encore auto-logué
-  const alreadyLogged = Math.floor(sessionElapsed/600)*600;
-  const rem = sessionElapsed - alreadyLogged;
-  if(rem>=10) state.log.unshift({date:localDate(),seconds:rem,pauseSeconds:pauseElapsed,note,subject});
-  save();renderLog();updateGoalProgress();renderRecap();renderHistCalendar();
-  showToast('⏹ '+fmtHM(sessionElapsed)+' enregistrées');
-  resetSession();
-}
+// Fonctions session (gardées pour compatibilité variables)
+function toggleSession(){ showToast('Utilise le Pomodoro ▲'); }
+function stopSession(){ }
+function resetSession(){ sessionRunning=false;sessionElapsed=0; }
+function togglePause(){ }
+function stopPause(){ pauseRunning=false;pauseElapsed=0; }
+function tickSession(){ }
+function renderTemplates(){ }
+function applyTemplate(){ }
+
 function addManualTime(){
   const h=parseInt(document.getElementById('manual-hours').value)||0;
   const m=parseInt(document.getElementById('manual-mins').value)||0;
   const subject=document.getElementById('manual-subject').value.trim();
   const note=document.getElementById('manual-note').value.trim();
-  const total=(h*3600)+(m*60);
-  if(total<60){showToast('⚠ Min 1 minute','red');return;}
-  state.log.unshift({date:localDate(),seconds:total,pauseSeconds:0,note:note||'Ajout manuel',subject});
-  save();renderLog();updateGoalProgress();
-  ['manual-hours','manual-mins','manual-subject','manual-note'].forEach(id=>document.getElementById(id).value='');
-  showToast('✓ '+(h>0?h+'h ':'')+m+'min ajoutées');
+  const secs=h*3600+m*60;
+  if(secs<60){showToast('⚠ Durée trop courte','red');return;}
+  const startTime = Date.now() - secs * 1000;
+  state.log.unshift({date:localDate(),seconds:secs,pauseSeconds:0,note,subject,startTime});
+  save();renderLog();updateGoalProgress();renderRecap();
+  document.getElementById('manual-hours').value='';
+  document.getElementById('manual-mins').value='';
+  showToast('✓ '+fmtHM(secs)+' ajoutées manuellement');
 }
-function updateGoalProgress(){
-  const tg=getTodayGoal();
-  document.getElementById('goal-display').textContent=tg;
-  const di=(new Date().getDay()+6)%7;
-  const hc=state.dailyGoals&&state.dailyGoals[di]!=null&&state.dailyGoals[di]!==state.goal;
-  const lbl=document.getElementById('goal-day-label');
-  if(lbl) lbl.textContent=hc?'('+DAYS_LABELS[di]+')':'';
-  const today=localDate();
-  // Include session + pomodoro running time in progress
-  const pomExtra = (pomState.active && pomState.type==='work') ? pomState.elapsed : 0;
-  let done=state.log.filter(e=>e.date===today).reduce((a,e)=>a+e.seconds,0)+sessionElapsed+pomExtra;
-  const gs=tg*3600;
-  const pct=tg===0?100:Math.min(100,Math.round(done/gs*100));
-  document.getElementById('goal-progress').style.width=pct+'%';
-  document.getElementById('progress-done').textContent=Math.floor(done/3600)+'h '+Math.floor((done%3600)/60)+'min';
-  document.getElementById('progress-pct').textContent=tg===0?'Repos 😴':pct+'%';
-}
-
-/* --------------------------------------------------
-   TEMPLATES RAPIDES
-/* ------------------------------ */
-function renderTemplates(){
-  const container=document.getElementById('templates-container');
-  if(!container) return;
-  container.innerHTML=settings.templates.map((t,i)=>`
-    <button class="template-btn" onclick="applyTemplate(${i})">
-      ${t.label}
-    </button>
-  `).join('');
-}
-function applyTemplate(i){
-  const t=settings.templates[i];
-  document.getElementById('session-subject').value=t.subject||'';
-  document.getElementById('session-note').value=t.note||'';
-  if(!sessionRunning) toggleSession();
-  showToast('▶ Session '+t.subject+' démarrée');
-}
-
 /* --------------------------------------------------
    POMODORO
 /* ------------------------------ */
@@ -3388,29 +3250,19 @@ function formatHistDate(ds){
 /* ------------------------------ */
 document.addEventListener('visibilitychange', ()=>{
   if(document.visibilityState === 'visible'){
-    // Recalculer le temps écoulé réel pour la session
-    if(sessionRunning && sessionStart){
-      const newElapsed = Math.floor((Date.now() - sessionStart) / 1000);
-      // Auto-log les tranches de 10min manquées
-      if(settings.autoLog){
-        const oldTranches = Math.floor(sessionElapsed / 600);
-        const newTranches = Math.floor(newElapsed / 600);
-        const missed = newTranches - oldTranches;
-        if(missed > 0){
-          const subject = document.getElementById('session-subject').value.trim();
-          const note = document.getElementById('session-note').value.trim();
-          for(let i = 0; i < missed; i++){
-            state.log.unshift({date:localDate(), seconds:600, pauseSeconds:0, note:'Auto-log'+(note?' — '+note:''), subject});
-          }
-          saveLocal(); renderLog(); updateGoalProgress();
-          showToast('⏱ +'+missed*10+'min auto-enregistrées (rattrapage)');
-        }
+    // Pomodoro — recalculer depuis startedAt (fiable sur mobile/tablette)
+    if(pomState.active && pomState.startedAt){
+      const realElapsed = Math.floor((Date.now() - pomState.startedAt) / 1000);
+      const dur = pomDuration();
+      if(realElapsed >= dur){
+        pomState.elapsed = dur;
+        tickPomodoro();
+      } else {
+        pomState.elapsed = realElapsed;
+        updatePomDisplay();
       }
-      sessionElapsed = newElapsed;
-      document.getElementById('session-display').textContent = fmtTime(sessionElapsed);
-      updateGoalProgress(); renderRecap();
     }
-    // Recalculer les minuteurs
+    // Minuteurs
     state.timers.forEach(t => {
       if(t.running && t.startedAt){
         const real = Math.floor((Date.now() - t.startedAt) / 1000);
