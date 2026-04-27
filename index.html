@@ -1871,47 +1871,80 @@ function setSyncStatus(s,label){
 }
 let saveTO=null;
 function saveLocal(){
-  if(currentUser) localStorage.setItem('worklog_state_'+currentUser.uid,JSON.stringify(state));
+  if(currentUser) localStorage.setItem('worklog_state_'+currentUser.uid, JSON.stringify(state));
 }
 function save(){
-  if(currentUser) localStorage.setItem('worklog_state_'+currentUser.uid,JSON.stringify(state));
-  if(!DOC_REF){return;}
-  setSyncStatus('syncing','Synchronisation...');
+  saveLocal();
+  if(!DOC_REF) return;
   clearTimeout(saveTO);
-  saveTO=setTimeout(()=>{
+  saveTO = setTimeout(()=>{
     DOC_REF.set(state)
       .then(()=>setSyncStatus('synced','Synchronisé ✓'))
-      .catch(()=>setSyncStatus('error','Hors ligne'));
-  },800);
+      .catch(e=>{
+        console.warn('Firebase save error:', e);
+        setSyncStatus('error','Hors ligne — données locales');
+      });
+  }, 1200); // debounce 1.2s pour éviter trop d'écritures rapides
 }
-async function loadFromFirestore(){
-  if(!DOC_REF){return;}
 
-  // 1. Afficher immédiatement les données locales (pas d'attente)
+function normalizeState(){
+  if(!state.log) state.log = [];
+  if(!state.timers) state.timers = [];
+  if(!state.events) state.events = [];
+  if(!state.todos) state.todos = [];
+  if(!state.docs) state.docs = [];
+  if(!state.notes) state.notes = {};
+  if(!state.subjectGoals) state.subjectGoals = [];
+  if(!state.dailyGoals) state.dailyGoals = Array(7).fill(null);
+  if(typeof state.goal !== 'number') state.goal = 8;
+  // Recalculer les minuteurs en cours
+  state.timers.forEach(t=>{
+    if(t.running && t.startedAt){
+      const re = Math.floor((Date.now()-t.startedAt)/1000);
+      t.elapsed = Math.min(t.duration, re);
+      if(t.elapsed >= t.duration){ t.done=true; t.running=false; t.startedAt=null; }
+    }
+  });
+}
+
+async function loadFromFirestore(){
+  if(!DOC_REF) return;
+
+  // 1. Afficher immédiatement les données locales
   const localKey = 'worklog_state_'+currentUser.uid;
   const localRaw = localStorage.getItem(localKey) || localStorage.getItem('worklog_state');
   if(localRaw){
     try{
       const localData = JSON.parse(localRaw);
       state = {...state, ...localData};
+      normalizeState();
+      loadSettings();
       renderAll();
-    }catch(e){}
+    }catch(e){ console.warn('Local parse error:', e); }
   }
 
-  // 2. Charger Firebase en parallèle et mettre à jour si plus récent
+  // 2. Charger Firebase
   setSyncStatus('syncing','Synchronisation...');
   try{
     const doc = await DOC_REF.get();
     if(doc.exists){
       const data = doc.data();
-      // Merger intelligemment — garder le plus grand log
-      if(data.log && data.log.length >= (state.log||[]).length){
+      // Merger : prendre Firebase sauf si local a plus d'entrées récentes
+      const fbLog = data.log || [];
+      const localLog = state.log || [];
+      // Utiliser le log qui a la dernière entrée la plus récente
+      const fbLatest = fbLog.length ? (fbLog[0].date||'') : '';
+      const localLatest = localLog.length ? (localLog[0].date||'') : '';
+      if(fbLatest >= localLatest && fbLog.length >= localLog.length){
         state = {...state, ...data};
       } else {
-        // Les données locales sont plus récentes, garder mais merger les champs non-log
-        const {log, ...rest} = data;
-        state = {...state, ...rest};
+        // Garder le log local mais prendre le reste de Firebase
+        const savedLog = state.log;
+        state = {...state, ...data, log: savedLog};
       }
+      // Nettoyer le champ pomCrash du state normal
+      delete state.pomCrash;
+      normalizeState();
       localStorage.setItem(localKey, JSON.stringify(state));
       setSyncStatus('synced','Synchronisé ✓');
     } else {
@@ -1919,22 +1952,10 @@ async function loadFromFirestore(){
       setSyncStatus('synced','Prêt ✓');
     }
   }catch(e){
+    console.warn('Firebase load error:', e);
     setSyncStatus('error','Hors ligne — données locales');
   }
 
-  if(!state.events)state.events=[];
-  if(!state.todos)state.todos=[];
-  if(!state.docs)state.docs=[];
-  if(!state.notes)state.notes={};
-  if(!state.subjectGoals)state.subjectGoals=[];
-  if(!state.dailyGoals)state.dailyGoals=Array(7).fill(null);
-  state.timers.forEach(t=>{
-    if(t.running&&t.startedAt){
-      const re=Math.floor((Date.now()-t.startedAt)/1000);
-      t.elapsed=Math.min(t.duration,re);
-      if(t.elapsed>=t.duration){t.done=true;t.running=false;t.startedAt=null;}
-    }
-  });
   loadSettings();
   renderAll();
 }
@@ -1971,18 +1992,19 @@ function saveSettings(){
   localStorage.setItem('wt_settings', JSON.stringify(settings));
 }
 function loadSettings(){
-  document.getElementById('break-toggle').checked    = settings.breakReminder;
-  document.getElementById('autolog-toggle').checked  = settings.autoLog;
-  document.getElementById('recap-toggle').checked    = settings.showRecap;
-  document.getElementById('break-hours-input').value = settings.breakHours;
-  document.getElementById('break-hours-row').style.display = settings.breakReminder ? 'flex' : 'none';
-  document.getElementById('recap-bar').style.display = settings.showRecap ? '' : 'none';
+  const safe = (id) => document.getElementById(id);
+  const bt = safe('break-toggle');     if(bt) bt.checked = settings.breakReminder;
+  const at = safe('autolog-toggle');   if(at) at.checked = settings.autoLog;
+  const rt = safe('recap-toggle');     if(rt) rt.checked = settings.showRecap;
+  const bh = safe('break-hours-input');if(bh) bh.value   = settings.breakHours;
+  const br = safe('break-hours-row');  if(br) br.style.display = settings.breakReminder ? 'flex' : 'none';
+  const rb = safe('recap-bar');        if(rb) rb.style.display = settings.showRecap ? '' : 'none';
   pomSettings.work  = settings.pomWork  || 25;
   pomSettings.short = settings.pomShort || 5;
   pomSettings.long  = settings.pomLong  || 15;
-  document.getElementById('pom-work-val').textContent  = pomSettings.work;
-  document.getElementById('pom-short-val').textContent = pomSettings.short;
-  document.getElementById('pom-long-val').textContent  = pomSettings.long;
+  const pw = safe('pom-work-val');  if(pw) pw.textContent = pomSettings.work;
+  const ps = safe('pom-short-val'); if(ps) ps.textContent = pomSettings.short;
+  const pl = safe('pom-long-val');  if(pl) pl.textContent = pomSettings.long;
 }
 function toggleRecapBar(){
   saveSettings();
@@ -2030,6 +2052,38 @@ function localDate(d){const t=d||new Date();return`${t.getFullYear()}-${String(t
 /* --------------------------------------------------
    RECAP BAR
 /* ------------------------------ */
+function updateGoalProgress(){
+  const today = localDate();
+  const pomExtra = (pomState && pomState.active && pomState.type==='work') ? pomState.elapsed : 0;
+  const todaySecs = state.log.filter(e=>e.date===today).reduce((a,e)=>a+e.seconds,0) + pomExtra;
+  const goal = getTodayGoal();
+  const goalSecs = goal * 3600;
+
+  // Barre de progression
+  const pct = goalSecs > 0 ? Math.min(100, Math.round(todaySecs/goalSecs*100)) : 0;
+  const bar = document.getElementById('goal-progress');
+  if(bar) bar.style.width = pct+'%';
+
+  const doneEl = document.getElementById('progress-done');
+  if(doneEl){
+    const h=Math.floor(todaySecs/3600), m=Math.floor((todaySecs%3600)/60);
+    doneEl.textContent = h>0 ? h+'h '+m+'min' : m+'min';
+  }
+  const pctEl = document.getElementById('progress-pct');
+  if(pctEl) pctEl.textContent = pct+'%';
+
+  const goalDisp = document.getElementById('goal-display');
+  if(goalDisp) goalDisp.textContent = goal;
+
+  const dayLabel = document.getElementById('goal-day-label');
+  if(dayLabel){
+    const days=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+    const di = (new Date().getDay()+6)%7;
+    const custom = state.dailyGoals?.[di];
+    dayLabel.textContent = custom!=null ? '('+days[di]+')' : '';
+  }
+}
+
 function renderRecap(){
   const today=localDate();
   const pomExtra = (pomState && pomState.active && pomState.type==='work') ? pomState.elapsed : 0;
