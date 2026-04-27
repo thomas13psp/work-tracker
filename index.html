@@ -631,7 +631,7 @@ textarea.input-field { resize: vertical; }
 }
 .pom-card.break { border-color: var(--teal); }
 .pom-card.break::before { background: linear-gradient(90deg, var(--teal), var(--lav)); }
-
+.pom-card.long-break::before { background: linear-gradient(90deg, var(--lav), var(--rose)); }
 
 .pom-header {
   display: flex;
@@ -654,7 +654,7 @@ textarea.input-field { resize: vertical; }
   transition: all .4s;
 }
 .pom-phase-badge.break { background: rgba(72,136,168,.12); border-color: rgba(72,136,168,.3); color: var(--teal); }
-
+.pom-phase-badge.long-break { background: rgba(120,120,192,.12); border-color: rgba(120,120,192,.3); color: var(--lav); }
 
 .pom-cycles-row {
   display: flex;
@@ -1409,6 +1409,7 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
             <div class="pom-header">
               <div class="pom-phase-badge" id="pom-phase-badge">🍅 TRAVAIL</div>
               <div class="pom-cycles-row" id="pom-cycles"></div>
+              <div class="pom-session-count" id="pom-session-count">Session 1 / 4</div>
             </div>
 
             <div class="pom-center">
@@ -1459,14 +1460,21 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
                 <button class="pom-chip-btn" onclick="adjPom('work',-5)">−</button>
                 <span class="pom-chip-val" id="pom-work-val">25</span>
                 <button class="pom-chip-btn" onclick="adjPom('work',5)">+</button>
-                <span class="pom-chip-unit">min travail</span>
+                <span class="pom-chip-unit">min</span>
               </div>
               <div class="pom-setting-chip">
-                <span>⏸</span>
+                <span>☕</span>
                 <button class="pom-chip-btn" onclick="adjPom('short',-1)">−</button>
                 <span class="pom-chip-val" id="pom-short-val">5</span>
                 <button class="pom-chip-btn" onclick="adjPom('short',1)">+</button>
-                <span class="pom-chip-unit">min pause</span>
+                <span class="pom-chip-unit">min</span>
+              </div>
+              <div class="pom-setting-chip">
+                <span>🌿</span>
+                <button class="pom-chip-btn" onclick="adjPom('long',-5)">−</button>
+                <span class="pom-chip-val" id="pom-long-val">15</span>
+                <button class="pom-chip-btn" onclick="adjPom('long',5)">+</button>
+                <span class="pom-chip-unit">min</span>
               </div>
             </div>
 
@@ -1919,7 +1927,7 @@ if(!state.dailyGoals)state.dailyGoals=Array(7).fill(null);
    SETTINGS
 /* ------------------------------ */
 let settings = JSON.parse(localStorage.getItem('wt_settings')||'{}');
-settings = Object.assign({breakReminder:false, breakHours:2, autoLog:true, showRecap:true, theme:'warm', pomWork:25, pomShort:5, templates:[{label:'📚 Cours',subject:'Cours',note:''},{label:'✏️ Révision',subject:'Révision',note:''},{label:'📝 Devoir',subject:'Devoir',note:''},{label:'🔬 Labo',subject:'Labo',note:''}]}, settings);
+settings = Object.assign({breakReminder:false, breakHours:2, autoLog:true, showRecap:true, theme:'warm', pomWork:25, pomShort:5, pomLong:15, templates:[{label:'📚 Cours',subject:'Cours',note:''},{label:'✏️ Révision',subject:'Révision',note:''},{label:'📝 Devoir',subject:'Devoir',note:''},{label:'🔬 Labo',subject:'Labo',note:''}]}, settings);
 
 function saveSettings(){
   settings.breakReminder = document.getElementById('break-toggle').checked;
@@ -1938,8 +1946,10 @@ function loadSettings(){
   document.getElementById('recap-bar').style.display = settings.showRecap ? '' : 'none';
   pomSettings.work  = settings.pomWork  || 25;
   pomSettings.short = settings.pomShort || 5;
+  pomSettings.long  = settings.pomLong  || 15;
   document.getElementById('pom-work-val').textContent  = pomSettings.work;
   document.getElementById('pom-short-val').textContent = pomSettings.short;
+  document.getElementById('pom-long-val').textContent  = pomSettings.long;
 }
 function toggleRecapBar(){
   saveSettings();
@@ -2181,21 +2191,17 @@ function applyTemplate(i){
 /* ------------------------------ */
 const POM_CYCLES = 4;
 const CIRCUMFERENCE = 603; // 2*PI*96
-let pomSettings = {work:25, short:5};
+let pomSettings = {work:25, short:5, long:15};
 let pomState = {
-  active: false,
-  type: 'work',
-  elapsed: 0,
-  cyclesCompleted: 0,
-  interval: null,
-  autoLoggedSecs: 0,
-  startedAt: null
+  active: false, type: 'work', elapsed: 0,
+  cyclesCompleted: 0, interval: null,
+  startedAt: null, sessionStartedAt: null
 };
 
-function pomDuration(){ return pomState.type==='work'?pomSettings.work*60:pomSettings.short*60; }
-function pomColor(){ return pomState.type==='work'?'var(--sage)':'var(--teal)'; }
-function pomLabel(){ return pomState.type==='work'?'TRAVAIL':'PAUSE'; }
-function pomBadgeText(){ return pomState.type==='work'?'🍅 TRAVAIL':'⏸ PAUSE'; }
+function pomDuration(){ return pomState.type==='work'?pomSettings.work*60:pomState.type==='short'?pomSettings.short*60:pomSettings.long*60; }
+function pomColor(){ return pomState.type==='work'?'var(--sage)':pomState.type==='short'?'var(--teal)':'var(--lav)'; }
+function pomLabel(){ return pomState.type==='work'?'TRAVAIL':pomState.type==='short'?'PAUSE':'GRANDE PAUSE'; }
+function pomBadgeText(){ return pomState.type==='work'?'🍅 TRAVAIL':pomState.type==='short'?'☕ PAUSE':'🌿 GRANDE PAUSE'; }
 function pomGetSub(){ return (document.getElementById('pom-subject')||{}).value?.trim()||'Pomodoro'; }
 function pomGetNote(){ return (document.getElementById('pom-note')||{}).value?.trim()||''; }
 
@@ -2204,12 +2210,12 @@ function pomSaveLocal(){
   if(!pomState.active || pomState.type!=='work') return;
   localStorage.setItem('pom_crash', JSON.stringify({
     startedAt: pomState.startedAt,
+    sessionStartedAt: pomState.sessionStartedAt,
     elapsed: pomState.elapsed,
-    autoLoggedSecs: pomState.autoLoggedSecs,
-    subject: pomGetSub(),
-    note: pomGetNote(),
     type: pomState.type,
-    cyclesCompleted: pomState.cyclesCompleted
+    cyclesCompleted: pomState.cyclesCompleted,
+    subject: pomGetSub(),
+    note: pomGetNote()
   }));
 }
 function pomRestoreAfterCrash(){
@@ -2218,37 +2224,30 @@ function pomRestoreAfterCrash(){
     if(!saved) return;
     const d = JSON.parse(saved);
     if(!d.startedAt) return;
-    // Calculate real elapsed since startedAt
     const realElapsed = Math.floor((Date.now() - d.startedAt) / 1000);
-    // Only restore if within reasonable bounds (< duration + 5min)
-    if(realElapsed > (pomSettings.work*60 + 300)) {
-      // Too long - just log what we can
-      const dur = pomSettings.work * 60;
-      const toLog = Math.min(realElapsed, dur) - (d.autoLoggedSecs||0);
-      if(toLog >= 60) {
-        state.log.unshift({date:localDate(), seconds:toLog, pauseSeconds:0, note:'🍅 Pomodoro (reprise)', subject:d.subject||'Pomodoro'});
+    const dur = (d.type==='work'?pomSettings.work:pomSettings.short)*60;
+    // Enregistrer le temps de travail perdu
+    if(d.type === 'work'){
+      const toLog = Math.min(realElapsed, dur);
+      if(toLog >= 30){
+        const startTime = d.sessionStartedAt || d.startedAt;
+        state.log.unshift({date:localDate(), seconds:toLog, pauseSeconds:0,
+          note:d.note||'', subject:d.subject||'Pomodoro', startTime, isPom:true});
         save(); renderLog(); updateGoalProgress(); renderRecap();
-        showToast('Pomodoro restauré : +'+fmtHM(toLog)+' enregistrées');
+        showToast('🍅 Restauré : +'+fmtHM(toLog)+' enregistrées');
       }
-      localStorage.removeItem('pom_crash');
-      return;
     }
-    if(d.subject) { const el=document.getElementById('pom-subject'); if(el) el.value=d.subject; }
-    if(d.note) { const el=document.getElementById('pom-note'); if(el) el.value=d.note; }
-    pomState.elapsed = Math.min(realElapsed, pomDuration());
-    pomState.autoLoggedSecs = d.autoLoggedSecs || 0;
-    pomState.cyclesCompleted = d.cyclesCompleted || 0;
-    pomState.startedAt = d.startedAt;
-    showToast('🍅 Pomodoro restauré — '+ fmtHM(pomState.elapsed) +' récupérées');
     localStorage.removeItem('pom_crash');
-  } catch(e) { localStorage.removeItem('pom_crash'); }
+  } catch(e){ localStorage.removeItem('pom_crash'); }
 }
 
 function togglePomodoro(){
   if(!pomState.active){
-    // Reprendre ou démarrer — elapsed est conservé
     pomState.active = true;
     pomState.startedAt = Date.now() - pomState.elapsed * 1000;
+    if(pomState.type === 'work' && !pomState.sessionStartedAt){
+      pomState.sessionStartedAt = pomState.startedAt;
+    }
     pomState.interval = setInterval(tickPomodoro, 1000);
     document.getElementById('pom-btn').className = 'pom-ctrl-btn pom-ctrl-main paused';
     document.getElementById('pom-btn-icon').textContent = '⏸';
@@ -2256,69 +2255,68 @@ function togglePomodoro(){
     document.getElementById('recap-pomodoro').style.display = 'flex';
     updatePomDisplay();
   } else {
-    // Mettre en pause — elapsed est conservé tel quel
     pomState.active = false;
     clearInterval(pomState.interval);
     pomState.startedAt = null;
     document.getElementById('pom-btn').className = 'pom-ctrl-btn pom-ctrl-main';
     document.getElementById('pom-btn-icon').textContent = '▶';
     document.getElementById('pom-btn-label').textContent = 'Reprendre';
-    // Sauvegarder l'état pausé
     localStorage.setItem('pom_paused', JSON.stringify({
-      elapsed: pomState.elapsed,
-      autoLoggedSecs: pomState.autoLoggedSecs,
-      type: pomState.type,
+      elapsed: pomState.elapsed, type: pomState.type,
       cyclesCompleted: pomState.cyclesCompleted,
-      subject: pomGetSub(),
-      note: pomGetNote()
+      sessionStartedAt: pomState.sessionStartedAt,
+      subject: pomGetSub(), note: pomGetNote()
     }));
   }
 }
 
 function tickPomodoro(){
-  pomState.elapsed++;
+  if(!pomState.startedAt) return;
+  pomState.elapsed = Math.floor((Date.now() - pomState.startedAt) / 1000);
   pomSaveLocal();
   updatePomDisplay();
 
-  // Live info bar
+  // Barre info live
   const infoEl = document.getElementById('pom-log-info');
   const liveEl = document.getElementById('pom-live-text');
   if(infoEl && pomState.type === 'work'){
     const sub = pomGetSub();
-    const elapsed = fmtHM(pomState.elapsed);
     infoEl.style.display = 'flex';
-    if(liveEl) liveEl.textContent = elapsed + ' en cours' + (sub && sub!=='Pomodoro'?' — '+sub:'') + (pomState.autoLoggedSecs>0?' · '+fmtHM(pomState.autoLoggedSecs)+' enregistrées':'');
-  }
-
-  // Auto-log every 10 min
-  if(pomState.type === 'work' && pomState.elapsed > 0 && pomState.elapsed % 600 === 0){
-    const subject = pomGetSub(), note = pomGetNote();
-    state.log.unshift({date:localDate(), seconds:600, pauseSeconds:0, note:'🍅 Auto-log'+(note?' — '+note:''), subject});
-    pomState.autoLoggedSecs += 600;
-    save(); renderLog(); updateGoalProgress(); renderRecap(); renderHistCalendar();
-    showToast('⏱ +10min — '+(subject!=='Pomodoro'?subject:'Pomodoro'));
+    if(liveEl) liveEl.textContent = fmtHM(pomState.elapsed) + ' en cours' + (sub && sub !== 'Pomodoro' ? ' — ' + sub : '');
   }
 
   // Phase terminée
   if(pomState.elapsed >= pomDuration()){
     pomState.active = false;
     clearInterval(pomState.interval);
+    pomState.interval = null;
+    pomState.startedAt = null;
     localStorage.removeItem('pom_crash');
     if(infoEl) infoEl.style.display = 'none';
 
     if(pomState.type === 'work'){
-      // Log remaining time
+      // UNE SEULE entrée propre avec la durée totale et l'heure de début
       const sub = pomGetSub(), note = pomGetNote();
-      const rem = (pomSettings.work * 60) - pomState.autoLoggedSecs;
-      if(rem > 0) state.log.unshift({date:localDate(), seconds:rem, pauseSeconds:0, note:'🍅 Pomodoro terminé'+(note?' — '+note:''), subject:sub});
-      pomState.autoLoggedSecs = 0;
+      const totalSecs = pomSettings.work * 60;
+      const startTime = pomState.sessionStartedAt || (Date.now() - totalSecs * 1000);
+      state.log.unshift({
+        date: localDate(),
+        seconds: totalSecs,
+        pauseSeconds: 0,
+        note: note ? note : '',
+        subject: sub,
+        startTime: startTime,
+        isPom: true
+      });
+      pomState.sessionStartedAt = null;
       save(); renderLog(); updateGoalProgress(); renderRecap(); renderHistCalendar();
       pomState.cyclesCompleted++;
       pomState.type = 'short';
       playBreakSound();
-      showToast('🎉 Pomodoro terminé ! Pause '+pomSettings.short+'min — lancée automatiquement');
+      showToast('🎉 ' + fmtHM(totalSecs) + ' enregistrées' + (sub && sub !== 'Pomodoro' ? ' — ' + sub : '') + ' · Pause lancée !');
     } else {
       pomState.type = 'work';
+      pomState.sessionStartedAt = null;
       playAlarm();
       showToast('▶ Pause terminée — Pomodoro lancé !');
     }
@@ -2326,43 +2324,48 @@ function tickPomodoro(){
     pomState.elapsed = 0;
     renderPomCycles();
     updatePomDisplay();
-    // Auto-start la phase suivante après 1s
+    // Auto-start phase suivante
     setTimeout(()=>{
-      if(pomState.active) return; // déjà lancé
+      if(pomState.active) return;
       pomState.elapsed = 0;
-      pomState.autoLoggedSecs = 0;
       pomState.active = true;
       pomState.startedAt = Date.now();
+      if(pomState.type === 'work') pomState.sessionStartedAt = Date.now();
       pomState.interval = setInterval(tickPomodoro, 1000);
       document.getElementById('pom-btn').className = 'pom-ctrl-btn pom-ctrl-main paused';
       document.getElementById('pom-btn-icon').textContent = '⏸';
-      document.getElementById('pom-btn-label').textContent = pomState.type==='work'?'Pause':'Arrêter';
+      document.getElementById('pom-btn-label').textContent = 'Pause';
       document.getElementById('recap-pomodoro').style.display = 'flex';
       updatePomDisplay();
     }, 1000);
   }
 }
 
-// Bouton ✕ : enregistre tout et remet à zéro
+// Bouton ✕ — enregistre le temps partiel et remet à zéro
 function savePomAndStop(){
-  if(!pomState.active && pomState.elapsed === 0){ showToast('⚠ Rien à enregistrer','red'); return; }
-  if(pomState.active){ pomState.active=false; clearInterval(pomState.interval); }
-  if(pomState.type === 'work'){
+  if(!pomState.active && pomState.elapsed === 0){ showToast('⚠ Rien à enregistrer', 'red'); return; }
+  if(pomState.active){ pomState.active = false; clearInterval(pomState.interval); pomState.interval = null; pomState.startedAt = null; }
+  if(pomState.type === 'work' && pomState.elapsed >= 10){
     const sub = pomGetSub(), note = pomGetNote();
-    const rem = pomState.elapsed - pomState.autoLoggedSecs;
-    if(rem >= 10) state.log.unshift({date:localDate(), seconds:rem, pauseSeconds:0, note:'🍅 Pomodoro arrêté'+(note?' — '+note:''), subject:sub});
-    if(rem >= 10){ save(); renderLog(); updateGoalProgress(); renderRecap(); renderHistCalendar(); }
-    showToast('✓ '+fmtHM(pomState.elapsed)+' enregistrées — '+(sub!=='Pomodoro'?sub:''));
+    const startTime = pomState.sessionStartedAt || (Date.now() - pomState.elapsed * 1000);
+    state.log.unshift({
+      date: localDate(), seconds: pomState.elapsed,
+      pauseSeconds: 0, note: note ? note : '',
+      subject: sub, startTime: startTime, isPom: true
+    });
+    save(); renderLog(); updateGoalProgress(); renderRecap(); renderHistCalendar();
+    showToast('✓ ' + fmtHM(pomState.elapsed) + ' enregistrées' + (sub && sub !== 'Pomodoro' ? ' — ' + sub : ''));
   }
   localStorage.removeItem('pom_crash');
+  localStorage.removeItem('pom_paused');
   resetPomodoro();
 }
 
 function resetPomodoro(){
   pomState.active=false; clearInterval(pomState.interval);
   pomState.elapsed=0; pomState.type='work'; pomState.cyclesCompleted=0;
-  pomState.autoLoggedSecs=0; pomState.startedAt=null;
-  localStorage.removeItem('pom_crash');
+  pomState.startedAt=null; pomState.sessionStartedAt=null;
+  localStorage.removeItem('pom_crash'); localStorage.removeItem('pom_paused');
   const infoEl=document.getElementById('pom-log-info');
   if(infoEl) infoEl.style.display='none';
   document.getElementById('recap-pomodoro').style.display='none';
@@ -2373,22 +2376,22 @@ function resetPomodoro(){
 }
 
 function skipPomodoro(){
-  if(pomState.active){ pomState.active=false; clearInterval(pomState.interval); }
-  if(pomState.type==='work'){
+  if(pomState.active){ pomState.active=false; clearInterval(pomState.interval); pomState.interval=null; pomState.startedAt=null; }
+  if(pomState.type==='work' && pomState.elapsed >= 10){
     const sub=pomGetSub(), note=pomGetNote();
-    const rem = pomState.elapsed - pomState.autoLoggedSecs;
-    if(rem >= 10){
-      state.log.unshift({date:localDate(), seconds:rem, pauseSeconds:0, note:'🍅 Pomodoro (écourté)'+(note?' — '+note:''), subject:sub});
-      save(); renderLog(); updateGoalProgress(); renderRecap(); renderHistCalendar();
-    }
-    pomState.autoLoggedSecs=0;
+    const startTime = pomState.sessionStartedAt || (Date.now() - pomState.elapsed*1000);
+    state.log.unshift({date:localDate(), seconds:pomState.elapsed, pauseSeconds:0,
+      note:note||'', subject:sub, startTime, isPom:true});
+    save(); renderLog(); updateGoalProgress(); renderRecap(); renderHistCalendar();
+    showToast('✓ '+fmtHM(pomState.elapsed)+' enregistrées');
     pomState.type='short';
     pomState.cyclesCompleted++;
     playBreakSound();
   } else {
     pomState.type='work';
+    pomState.sessionStartedAt=null;
   }
-  pomState.elapsed=0; pomState.startedAt=null;
+  pomState.elapsed=0; pomState.sessionStartedAt=null;
   localStorage.removeItem('pom_crash');
   const infoEl=document.getElementById('pom-log-info'); if(infoEl) infoEl.style.display='none';
   renderPomCycles(); updatePomDisplay();
@@ -2400,9 +2403,11 @@ function skipPomodoro(){
 function adjPom(type,delta){
   if(type==='work')  pomSettings.work  = Math.max(5, pomSettings.work+delta);
   if(type==='short') pomSettings.short = Math.max(1, pomSettings.short+delta);
+  if(type==='long')  pomSettings.long  = Math.max(5, pomSettings.long+delta);
   document.getElementById('pom-work-val').textContent  = pomSettings.work;
   document.getElementById('pom-short-val').textContent = pomSettings.short;
-  settings.pomWork=pomSettings.work; settings.pomShort=pomSettings.short;
+  document.getElementById('pom-long-val').textContent  = pomSettings.long;
+  settings.pomWork=pomSettings.work; settings.pomShort=pomSettings.short; settings.pomLong=pomSettings.long;
   localStorage.setItem('wt_settings', JSON.stringify(settings));
   if(!pomState.active){ pomState.elapsed=0; updatePomDisplay(); }
 }
@@ -2415,13 +2420,13 @@ function updatePomDisplay(){
   const color = pomColor();
 
   const dispEl = document.getElementById('pom-display');
-  if(dispEl){ dispEl.textContent = timeStr; dispEl.className = 'pom-time'+(pomState.active&&pomState.type==='work'?' running':pomState.type==='short'?' break':''); }
+  if(dispEl){ dispEl.textContent = timeStr; dispEl.className = 'pom-time'+(pomState.active&&pomState.type==='work'?' running':pomState.type!=='work'?' break':''); }
 
   const typeEl = document.getElementById('pom-type-label');
   if(typeEl) typeEl.textContent = pomLabel();
 
   const badgeEl = document.getElementById('pom-phase-badge');
-  if(badgeEl){ badgeEl.textContent = pomBadgeText(); badgeEl.className = 'pom-phase-badge'+(pomState.type==='short'?' break':''); }
+  if(badgeEl){ badgeEl.textContent = pomBadgeText(); badgeEl.className = 'pom-phase-badge'+(pomState.type==='short'?' break':pomState.type==='long'?' long-break':''); }
 
   const fg = document.getElementById('pom-ring-fg');
   const glow = document.getElementById('pom-glow');
@@ -2432,7 +2437,7 @@ function updatePomDisplay(){
 
   // Card style
   const card = document.querySelector('.pom-card');
-  if(card){ card.className = 'pom-card'+(pomState.type==='short'?' break':''); }
+  if(card){ card.className = 'pom-card'+(pomState.type==='short'?' break':pomState.type==='long'?' long-break':''); }
 
   // Elapsed label
   const elEl = document.getElementById('pom-elapsed-label');
@@ -2471,24 +2476,6 @@ function playBreakSound(){
 }
 
 renderPomCycles(); updatePomDisplay();
-// Restore paused state
-try {
-  const paused = localStorage.getItem('pom_paused');
-  if(paused){
-    const d = JSON.parse(paused);
-    pomState.elapsed = d.elapsed || 0;
-    pomState.autoLoggedSecs = d.autoLoggedSecs || 0;
-    pomState.type = d.type || 'work';
-    pomState.cyclesCompleted = d.cyclesCompleted || 0;
-    if(d.subject){ const el=document.getElementById('pom-subject'); if(el) el.value=d.subject; }
-    if(d.note){ const el=document.getElementById('pom-note'); if(el) el.value=d.note; }
-    updatePomDisplay(); renderPomCycles();
-    document.getElementById('pom-btn-icon').textContent = '▶';
-    document.getElementById('pom-btn-label').textContent = 'Reprendre';
-    localStorage.removeItem('pom_paused');
-    showToast('⏸ Pomodoro en pause restauré — '+fmtHM(pomState.elapsed));
-  }
-} catch(e){}
 // Restore crash state after a short delay (state may not be loaded yet)
 setTimeout(pomRestoreAfterCrash, 800);
 
@@ -2818,15 +2805,77 @@ function renderLog(){
   list.innerHTML=state.log.map((e,i)=>{
     const h=Math.floor(e.seconds/3600),m=Math.floor((e.seconds%3600)/60),s=e.seconds%60;
     const bp=Math.min(100,Math.round(e.seconds/gs*100));
-    const ph=Math.floor((e.pauseSeconds||0)/3600),pm=Math.floor(((e.pauseSeconds||0)%3600)/60);
-    const ts=h>0?`${h}h ${m}min`:`${m}min ${s}s`;
-    const ps=ph>0?`${ph}h ${pm}min`:`${pm}min`;
-    return`<div class="log-entry"><div style="width:6px;height:6px;border-radius:50%;background:${e.seconds>=gs?'var(--sage)':'var(--amber)'};flex-shrink:0"></div><div style="font-family:var(--mono);font-size:.7rem;color:var(--text2);min-width:90px">${e.date}</div><div style="flex:1"><div style="font-family:var(--mono);font-size:.85rem">${e.subject?`<span class="mb">${e.subject}</span>`:''}<span style="color:var(--text)">${ts}</span>${e.pauseSeconds>0?`<span style="font-size:.68rem;color:var(--teal);margin-left:5px">☕ ${ps}</span>`:''} ${e.note?`<span style="font-size:.68rem;color:var(--text2);font-style:italic">— ${e.note}</span>`:''}</div><div class="log-bar-wrap" style="margin-top:3px"><div class="log-bar ${e.seconds<gs?'under':''}" style="width:${bp}%"></div></div></div><button class="del-btn" onclick="deleteLog(${i})">✕</button></div>`;
+    const ts=h>0?`${h}h ${m>0?m+'min':''}`:`${m}min${h===0&&m===0?' '+s+'s':''}`;
+    const isPom=e.note&&e.note.includes('🍅');
+
+    // Heure de début et fin
+    let timeStr='';
+    if(e.startTime){
+      const start=new Date(e.startTime);
+      const end=new Date(e.startTime+e.seconds*1000);
+      const fmt=d=>String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+      timeStr='<span style="color:var(--teal);font-size:.65rem;font-family:var(--mono)">'+fmt(start)+' → '+fmt(end)+'</span>';
+    }
+
+    const subHtml=e.subject?'<span class="mb">'+e.subject+'</span> ':'';
+    const noteHtml=e.note?'<span style="font-size:.65rem;color:var(--text3);font-style:italic"> — '+e.note+'</span>':'';
+    const pomIcon=isPom?'<span style="margin-right:3px">🍅</span>':'';
+
+    return '<div class="log-entry">'
+      +'<div style="width:6px;height:6px;border-radius:50%;flex-shrink:0;background:'+(e.seconds>=gs?'var(--sage)':'var(--amber)')+'"></div>'
+      +'<div style="min-width:72px">'
+        +'<div style="font-family:var(--mono);font-size:.6rem;color:var(--text3)">'+e.date+'</div>'
+        +(timeStr?'<div>'+timeStr+'</div>':'')
+      +'</div>'
+      +'<div style="flex:1">'
+        +'<div style="font-family:var(--mono);font-size:.82rem">'+pomIcon+subHtml+'<b style="color:var(--text)">'+ts+'</b>'+noteHtml+'</div>'
+        +'<div class="log-bar-wrap" style="margin-top:3px"><div class="log-bar '+(e.seconds<gs?'under':'')+'" style="width:'+bp+'%"></div></div>'
+      +'</div>'
+      +'<button class="del-btn" onclick="deleteLog('+i+')">✕</button>'
+    +'</div>';
   }).join('');
   updateStats();
   renderHistCalendar();
 }
 function deleteLog(i){state.log.splice(i,1);save();renderLog();updateGoalProgress();}
+
+// Consolider les auto-logs Pomodoro du même sujet/date en une seule entrée
+function consolidatePomLogs(){
+  const byKey={};
+  const toRemove=[];
+  state.log.forEach((e,i)=>{
+    if(!e.note||!e.note.includes('🍅')) return;
+    const key=e.date+'|'+(e.subject||'');
+    if(!byKey[key]) byKey[key]={total:0,indices:[],startTime:null,subject:e.subject,date:e.date};
+    byKey[key].total+=e.seconds;
+    byKey[key].indices.push(i);
+    if(!byKey[key].startTime||( e.startTime&&e.startTime<byKey[key].startTime))
+      byKey[key].startTime=e.startTime;
+  });
+  let merged=0;
+  Object.values(byKey).forEach(g=>{
+    if(g.indices.length<2) return;
+    // Remplacer toutes les entrées par une seule
+    const first=Math.min(...g.indices);
+    state.log[first]={
+      date:g.date,
+      seconds:g.total,
+      pauseSeconds:0,
+      note:'🍅 Pomodoro',
+      subject:g.subject||'',
+      startTime:g.startTime||null
+    };
+    // Marquer les autres à supprimer (en ordre décroissant pour ne pas décaler)
+    g.indices.filter(i=>i!==first).sort((a,b)=>b-a).forEach(i=>state.log.splice(i,1));
+    merged++;
+  });
+  if(merged>0){
+    save();renderLog();updateGoalProgress();renderRecap();
+    showToast('✓ '+merged+' session(s) Pomodoro consolidée(s)');
+  } else {
+    showToast('Aucun auto-log à consolider');
+  }
+}
 
 /* --------------------------------------------------
    STREAK & STATS
