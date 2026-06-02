@@ -1797,6 +1797,65 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
 
 <script>
 /* --------------------------------------------------
+   SOUND - Alarm (compatible macOS/Safari/WebKit)
+/* ------------------------------ */
+/* --------------------------------------------------
+   AUDIO ENGINE — compatible macOS / Safari / Chrome
+   Un seul AudioContext global, débloqué dès le premier
+   clic utilisateur (requis par tous les navigateurs modernes)
+/* ------------------------------ */
+let _sharedAudioCtx = null;
+
+// Appelé sur chaque interaction utilisateur pour débloquer l'audio
+function _ensureAudioCtx(){
+  if(!_sharedAudioCtx){
+    _sharedAudioCtx = new(window.AudioContext||window.webkitAudioContext)();
+  }
+  if(_sharedAudioCtx.state === 'suspended'){
+    _sharedAudioCtx.resume();
+  }
+  return _sharedAudioCtx;
+}
+
+// Débloquer l'audio dès le premier clic n'importe où dans la page
+document.addEventListener('click', ()=>{ try{ _ensureAudioCtx(); }catch(e){} }, { once: false, passive: true });
+document.addEventListener('keydown', ()=>{ try{ _ensureAudioCtx(); }catch(e){} }, { once: false, passive: true });
+
+function _playNote(ctx, freq, delay, vol, dur){
+  try{
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    const t0 = ctx.currentTime + delay;
+    osc.frequency.setValueAtTime(freq, t0);
+    // Rampe linéaire montante puis descendante (pas d'exponential depuis 0 — crash WebKit)
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.linearRampToValueAtTime(vol, t0 + 0.07);
+    gain.gain.setValueAtTime(vol, t0 + dur * 0.55);
+    gain.gain.linearRampToValueAtTime(0.0001, t0 + dur);
+    osc.start(t0);
+    osc.stop(t0 + dur + 0.05);
+  }catch(e){ console.warn('_playNote error:', e); }
+}
+
+function playAlarm(){
+  try{
+    const ctx = _ensureAudioCtx();
+    // Accord Do majeur ascendant — son de fin de session
+    [
+      {freq:523.25, delay:0,    vol:0.20, dur:1.8},
+      {freq:659.25, delay:0.42, vol:0.20, dur:1.6},
+      {freq:783.99, delay:0.84, vol:0.20, dur:1.5},
+      {freq:1046.5, delay:1.26, vol:0.24, dur:2.2},
+    ].forEach(n => _playNote(ctx, n.freq, n.delay, n.vol, n.dur));
+    // Basse douce en fond
+    _playNote(ctx, 261.63, 0, 0.08, 3.4);
+  }catch(e){ console.warn('playAlarm error:', e); }
+}
+
+/* --------------------------------------------------
    FIREBASE
 /* ------------------------------ */
 const firebaseConfig={apiKey:"AIzaSyBcfsO77WBlZK5WKIAnfutphTXJbVLHsqA",authDomain:"worklog-thomas.firebaseapp.com",projectId:"worklog-thomas",storageBucket:"worklog-thomas.firebasestorage.app",messagingSenderId:"778800014971",appId:"1:778800014971:web:2419e8e3c92074f098a4de"};
@@ -2525,7 +2584,7 @@ function renderPomCycles(){
 // Son doux de pause (descente) — compatible macOS/Safari
 function playBreakSound(){
   try{
-    const ctx=_makeAudioCtx();
+    const ctx = _ensureAudioCtx();
     [[523,0,.15,1.1],[659,.28,.14,0.9],[523,.56,.12,1.0],[392,.84,.10,1.3]].forEach(([freq,delay,vol,dur])=>{
       _playNote(ctx,freq,delay,vol,dur);
     });
@@ -2540,15 +2599,12 @@ setTimeout(pomRestoreAfterCrash, 800);
 /* --------------------------------------------------
    SONS AMBIANTS
 /* ------------------------------ */
-let audioCtx=null, soundSource=null, soundGain=null, currentSound=null;
+let soundSource=null, soundGain=null, currentSound=null;
 function initAudio(){
-  if(!audioCtx){
-    audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-    if(audioCtx.state==='suspended') audioCtx.resume();
-  } else if(audioCtx.state==='suspended'){
-    audioCtx.resume();
-  }
+  // Réutiliser le contexte partagé pour les sons ambiants aussi
+  audioCtx = _ensureAudioCtx();
 }
+let audioCtx = null;
 function stopSound(){
   if(soundSource){try{soundSource.stop();}catch(e){}soundSource=null;}
   currentSound=null;
@@ -2680,50 +2736,6 @@ function renderSubjectGoals(){
       <button class="icon-btn del" onclick="deleteSubjectGoal('${g.id}')">✕</button>
     </div>`;
   }).join('');
-}
-
-/* --------------------------------------------------
-   SOUND - Alarm (compatible macOS/Safari/WebKit)
-/* ------------------------------ */
-function _makeAudioCtx(){
-  const ctx=new(window.AudioContext||window.webkitAudioContext)();
-  // Safari suspend le contexte par défaut — le reprendre immédiatement
-  if(ctx.state==='suspended') ctx.resume();
-  return ctx;
-}
-function _playNote(ctx,freq,delay,vol,dur){
-  try{
-    const osc=ctx.createOscillator();
-    const gain=ctx.createGain();
-    // Ajouter un compresseur pour éviter les clipping sur macOS
-    osc.connect(gain); gain.connect(ctx.destination);
-    osc.type='sine';
-    osc.frequency.setValueAtTime(freq, ctx.currentTime+delay);
-    // IMPORTANT : éviter exponentialRamp depuis 0 (crash WebKit)
-    // On utilise uniquement setValueAtTime + linearRampToValueAtTime
-    const t0=ctx.currentTime+delay;
-    gain.gain.setValueAtTime(0.0001, t0);
-    gain.gain.linearRampToValueAtTime(vol, t0+0.06);
-    gain.gain.setValueAtTime(vol, t0+dur*0.6);
-    gain.gain.linearRampToValueAtTime(0.0001, t0+dur);
-    osc.start(t0);
-    osc.stop(t0+dur+0.05);
-  }catch(e){ console.warn('Sound error:',e); }
-}
-function playAlarm(){
-  try{
-    const ctx=_makeAudioCtx();
-    // Accord Do majeur ascendant — son de victoire/accomplissement
-    const notes=[
-      {freq:523.25,delay:0,    vol:0.18,dur:1.8},
-      {freq:659.25,delay:0.42, vol:0.18,dur:1.6},
-      {freq:783.99,delay:0.84, vol:0.18,dur:1.5},
-      {freq:1046.5, delay:1.26,vol:0.22,dur:2.2},
-    ];
-    notes.forEach(n=>_playNote(ctx,n.freq,n.delay,n.vol,n.dur));
-    // Harmonique douce en fond
-    _playNote(ctx,261.63,0,0.07,3.2);
-  }catch(e){ console.warn('playAlarm error:',e); }
 }
 
 /* --------------------------------------------------
