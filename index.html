@@ -1215,6 +1215,316 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
 
 /* Bottom nav caché par défaut */
 .bottom-nav { display: none; }
+
+/* ══════════════════════════════════════════════════════
+   AMÉLIORATIONS UI — injections ciblées
+══════════════════════════════════════════════════════ */
+
+/* ── Tokens ── */
+:root {
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.25), 0 1px 2px rgba(0,0,0,.18);
+  --shadow-md: 0 4px 14px rgba(0,0,0,.35), 0 2px 6px rgba(0,0,0,.2);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,.5), 0 4px 14px rgba(0,0,0,.3);
+  --glow-sage:   0 0 18px rgba(94,148,120,.18);
+  --glow-indigo: 0 0 18px rgba(104,120,192,.18);
+  --glow-amber:  0 0 18px rgba(176,128,64,.18);
+}
+
+/* ── Sidebar raffinée ── */
+.sidebar {
+  background: linear-gradient(180deg, var(--sidebar) 0%, #0a0c14 100%);
+  box-shadow: 2px 0 24px rgba(0,0,0,.35);
+}
+.sidebar-head { background: rgba(255,255,255,.016); }
+.nav-pill { border-radius: 10px; }
+.nav-pill.active {
+  box-shadow: var(--glow-indigo);
+  background: rgba(104,120,192,.13);
+}
+.nav-pill:hover:not(.active) { background: rgba(255,255,255,.04); }
+
+/* ── Topbar ── */
+.topbar {
+  background: linear-gradient(90deg, var(--sidebar) 0%, #0c0f1c 100%);
+  box-shadow: 0 1px 0 var(--border), 0 4px 20px rgba(0,0,0,.2);
+  backdrop-filter: blur(12px);
+}
+.topbar-title { font-size: 1rem; letter-spacing: .2px; }
+
+/* ── Recap bar ── */
+.recap-bar {
+  background: linear-gradient(90deg, rgba(14,16,26,.98) 0%, rgba(18,20,32,.98) 100%);
+  backdrop-filter: blur(10px);
+}
+.recap-val { font-weight: 600; letter-spacing: .3px; }
+
+/* ── Cards ── */
+.card {
+  box-shadow: var(--shadow-sm);
+  border-radius: 16px;
+  transition: border-color .2s, box-shadow .25s, transform .18s;
+}
+.card:hover {
+  border-color: var(--border2);
+  box-shadow: var(--shadow-md);
+}
+
+/* Accents colorés renforcés */
+.card.sage::after   { height: 3px; background: linear-gradient(90deg, var(--sage), var(--teal) 60%, transparent); }
+.card.amber::after  { height: 3px; background: linear-gradient(90deg, var(--amber), #d09860 60%, transparent); }
+.card.teal::after   { height: 3px; background: linear-gradient(90deg, var(--teal), var(--indigo) 60%, transparent); }
+.card.lav::after    { height: 3px; background: linear-gradient(90deg, var(--lav), var(--rose) 60%, transparent); }
+
+/* ── Titres de cartes ── */
+.card-title {
+  font-size: .61rem;
+  letter-spacing: 2.5px;
+  color: rgba(94,106,136,.8);
+  margin-bottom: 18px;
+}
+
+/* ── Boutons ── */
+.btn { transition: all .16s cubic-bezier(.4,0,.2,1); border-radius: 8px; }
+.btn-green  { box-shadow: 0 2px 8px rgba(94,148,120,.25); }
+.btn-green:hover  { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(94,148,120,.4); }
+.btn-amber  { box-shadow: 0 2px 8px rgba(176,128,64,.25); }
+.btn-amber:hover  { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(176,128,64,.4); }
+.btn-blue   { box-shadow: 0 2px 8px rgba(80,128,192,.25); }
+.btn-blue:hover   { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(80,128,192,.4); }
+.btn-teal   { box-shadow: 0 2px 8px rgba(72,136,168,.25); }
+.btn-teal:hover   { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(72,136,168,.4); }
+.btn-purple { box-shadow: 0 2px 8px rgba(120,120,192,.25); }
+.btn-purple:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(120,120,192,.4); }
+.btn-muted:hover  { transform: translateY(-1px); }
+.btn:active       { transform: scale(.97) translateY(0) !important; }
+
+/* ── Inputs ── */
+.input-field {
+  background: rgba(255,255,255,.032);
+  border-color: var(--border);
+  transition: border-color .15s, box-shadow .15s, background .15s;
+}
+.input-field:focus {
+  background: rgba(104,120,192,.06);
+  border-color: rgba(104,120,192,.6);
+  box-shadow: 0 0 0 3px rgba(104,120,192,.1), 0 1px 4px rgba(0,0,0,.3);
+}
+
+/* ── Progress bar ── */
+.progress-bar {
+  background: linear-gradient(90deg, #5870B8, var(--teal), var(--sage));
+  box-shadow: 0 0 10px rgba(88,112,184,.25);
+}
+.progress-bar-wrap {
+  height: 6px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--border);
+  margin: 14px 0 10px;
+}
+
+/* ── Goal number ── */
+.goal-number {
+  background: linear-gradient(135deg, var(--teal) 0%, var(--indigo) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Stats boxes ── */
+.stat-box {
+  background: rgba(255,255,255,.025);
+  border-color: var(--border);
+  border-radius: 11px;
+  transition: border-color .2s, background .2s, box-shadow .2s;
+}
+.stat-box:hover {
+  border-color: var(--border2);
+  background: rgba(255,255,255,.04);
+  box-shadow: var(--shadow-sm);
+}
+.stat-val { color: var(--amber); letter-spacing: .5px; }
+
+/* ── Log entries ── */
+.log-entry {
+  padding: 9px 4px;
+  border-radius: 7px;
+  transition: background .15s;
+}
+.log-entry:hover { background: rgba(255,255,255,.02); }
+.log-list {
+  max-height: 280px;
+  scrollbar-width: thin;
+}
+
+/* ── Timer items ── */
+.timer-item {
+  border-radius: 13px;
+  transition: border-color .2s, box-shadow .2s;
+}
+.timer-item.active {
+  border-color: rgba(94,148,120,.4);
+  box-shadow: 0 0 20px rgba(94,148,120,.06);
+}
+
+/* ── Pomodoro card ── */
+.pom-card {
+  border-radius: 22px;
+  box-shadow: var(--shadow-md);
+}
+.pom-ctrl-main {
+  box-shadow: 0 8px 28px rgba(94,148,120,.4);
+  transition: all .2s cubic-bezier(.4,0,.2,1);
+}
+.pom-ctrl-main:hover {
+  transform: scale(1.09) translateY(-2px);
+  box-shadow: 0 12px 36px rgba(94,148,120,.55);
+}
+.pom-ctrl-main.paused { box-shadow: 0 8px 28px rgba(176,128,64,.4); }
+.pom-ctrl-main.paused:hover { box-shadow: 0 12px 36px rgba(176,128,64,.55); }
+.pom-ctrl-secondary { transition: all .18s; }
+.pom-ctrl-secondary:hover { transform: scale(1.05); }
+
+/* ── Sound buttons ── */
+.sound-btn {
+  border-radius: 13px;
+  transition: all .2s cubic-bezier(.4,0,.2,1);
+}
+.sound-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+.sound-btn.active {
+  box-shadow: 0 0 18px rgba(72,136,168,.2);
+  transform: translateY(-1px);
+}
+
+/* ── Badge matière ── */
+.mb {
+  background: rgba(104,120,192,.1);
+  border-color: rgba(104,120,192,.2);
+  border-radius: 5px;
+  font-size: .66rem;
+}
+
+/* ── Modals ── */
+.modal {
+  box-shadow: 0 40px 90px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.04);
+  backdrop-filter: blur(4px);
+}
+.modal-overlay { background: rgba(4,5,12,.75); }
+
+/* ── Toast ── */
+#toast {
+  backdrop-filter: blur(12px);
+  background: rgba(21,24,32,.92);
+  box-shadow: 0 8px 32px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.04);
+  border-radius: 10px;
+  font-size: .74rem;
+  letter-spacing: .3px;
+}
+
+/* ── Sync status ── */
+#sync-status {
+  border-radius: 8px;
+  font-size: .61rem;
+  letter-spacing: .3px;
+}
+#sync-status.synced { box-shadow: 0 0 12px rgba(94,148,120,.1); }
+
+/* ── Todo items ── */
+.todo-item {
+  border-radius: 10px;
+  transition: all .15s;
+}
+.todo-item:hover { transform: translateX(2px); box-shadow: var(--shadow-sm); }
+.todo-item.done-item:hover { transform: none; box-shadow: none; }
+.todo-check {
+  border-radius: 6px;
+  transition: all .15s cubic-bezier(.4,0,.2,1);
+}
+.todo-check.checked { box-shadow: 0 0 10px rgba(94,148,120,.35); }
+.todo-check:hover { border-color: var(--sage); }
+
+/* ── Calendar ── */
+.cal-day {
+  border-radius: 9px;
+  transition: all .18s cubic-bezier(.4,0,.2,1);
+}
+.cal-day:hover {
+  transform: scale(1.04);
+  box-shadow: var(--shadow-sm);
+}
+.cal-day.today { box-shadow: 0 0 14px rgba(176,128,64,.15); }
+
+/* ── History calendar ── */
+.hist-day {
+  transition: all .18s cubic-bezier(.4,0,.2,1);
+  border-radius: 9px;
+}
+.hist-day:hover {
+  transform: scale(1.04);
+  box-shadow: var(--shadow-sm);
+}
+.hist-day.selected { box-shadow: 0 0 14px rgba(72,136,168,.2); }
+
+/* ── Day view ── */
+.day-event-block { border-radius: 7px; }
+.day-hour-row:hover { background: rgba(104,120,192,.025); }
+
+/* ── Pom phase badge ── */
+.pom-phase-badge {
+  letter-spacing: 1.5px;
+  font-size: .7rem;
+}
+
+/* ── Scrollbars ── */
+* { scrollbar-width: thin; scrollbar-color: rgba(52,60,96,.6) transparent; }
+*::-webkit-scrollbar { width: 5px; height: 5px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: rgba(52,60,96,.6); border-radius: 3px; }
+*::-webkit-scrollbar-thumb:hover { background: rgba(52,60,96,.9); }
+
+/* ── Tab animation ── */
+@keyframes tabIn {
+  from { opacity:0; transform:translateY(8px) scale(.995); }
+  to   { opacity:1; transform:none; }
+}
+.tab-panel.active { animation: tabIn .22s cubic-bezier(.4,0,.2,1) forwards; }
+
+/* ── Empty states ── */
+.empty-log {
+  color: rgba(62,72,96,.9);
+  font-size: .74rem;
+  padding: 28px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.empty-log::before { content: '○'; font-size: .55rem; opacity: .5; }
+
+/* ── Séparateurs ── */
+hr, .section-divider {
+  border-color: rgba(42,48,80,.5);
+}
+
+/* ── Filter pills ── */
+.filter-pill.active {
+  background: rgba(104,120,192,.15);
+  color: var(--indigo);
+  font-weight: 500;
+}
+
+/* ── Login screen ── */
+#login-screen {
+  background: radial-gradient(ellipse at 50% 40%, rgba(18,22,40,.98) 0%, rgba(8,10,20,1) 100%);
+}
+
+/* ── Icon buttons ── */
+.icon-btn {
+  transition: all .15s;
+  border-radius: 7px;
+}
+.icon-btn:hover { transform: scale(1.08); }
+.icon-btn.del:hover { transform: scale(1.05); }
+
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
@@ -1387,15 +1697,30 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
   </div>
 
   <div class="recap-bar" id="recap-bar">
-    <div class="recap-item">Aujourd'hui <span class="recap-val" id="recap-today">0h</span></div>
+    <div class="recap-item">
+      <span style="color:var(--text3);font-size:.61rem">Aujourd'hui</span>
+      <span class="recap-val" id="recap-today">0h</span>
+    </div>
     <div class="recap-dot"></div>
-    <div class="recap-item">Objectif <span class="recap-val" id="recap-goal">–</span></div>
+    <div class="recap-item">
+      <span style="color:var(--text3);font-size:.61rem">Objectif</span>
+      <span class="recap-val" id="recap-goal">–</span>
+    </div>
     <div class="recap-dot"></div>
-    <div class="recap-item">🔥 Streak <span class="recap-val" id="recap-streak">0</span></div>
+    <div class="recap-item">
+      <span style="color:var(--text3);font-size:.61rem">🔥 Série</span>
+      <span class="recap-val" id="recap-streak">0</span>
+      <span style="font-family:var(--mono);font-size:.57rem;color:var(--text3)">j.</span>
+    </div>
     <div class="recap-dot"></div>
-    <div class="recap-item">Cette semaine <span class="recap-val" id="recap-week">0h</span></div>
+    <div class="recap-item">
+      <span style="color:var(--text3);font-size:.61rem">Semaine</span>
+      <span class="recap-val" id="recap-week">0h</span>
+    </div>
     <div class="recap-dot" style="margin-left:auto"></div>
-    <div class="recap-item" id="recap-pomodoro" style="display:none">🍅 Pomodoro actif</div>
+    <div class="recap-item" id="recap-pomodoro" style="display:none">
+      <span style="color:var(--sage);font-size:.61rem">🍅 En cours</span>
+    </div>
   </div>
 
   <div class="main-scroll">
@@ -1490,21 +1815,23 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
             <div class="card-title" style="margin:0">Objectif journalier</div>
             <button class="btn btn-muted" style="font-size:.68rem;padding:4px 10px" onclick="openGoalsModal()">⚙ Par jour</button>
           </div>
-          <div style="display:flex;align-items:flex-end;gap:10px;margin-bottom:12px">
+          <div style="display:flex;align-items:flex-end;gap:10px;margin-bottom:14px">
             <div class="goal-number" id="goal-display">8</div>
-            <div style="font-family:var(--mono);font-size:.82rem;color:var(--text2);padding-bottom:7px">h / jour</div>
-            <div id="goal-day-label" style="font-family:var(--mono);font-size:.65rem;color:var(--teal);padding-bottom:9px"></div>
+            <div style="display:flex;flex-direction:column;padding-bottom:6px;gap:2px">
+              <span style="font-family:var(--mono);font-size:.78rem;color:var(--text2)">h / jour</span>
+              <span id="goal-day-label" style="font-family:var(--mono);font-size:.62rem;color:var(--teal)"></span>
+            </div>
           </div>
           <div class="progress-bar-wrap"><div class="progress-bar" id="goal-progress" style="width:0%"></div></div>
-          <div class="progress-label">
-            <span id="progress-done">0h 0min</span>
-            <span id="progress-pct">0%</span>
+          <div class="progress-label" style="margin-bottom:2px">
+            <span id="progress-done" style="color:var(--text)">0h 0min</span>
+            <span id="progress-pct" style="color:var(--indigo);font-weight:600">0%</span>
           </div>
           <div class="stats-row" id="weekly-stats"></div>
         </div>
 
         <div class="card col-1">
-          <div class="card-title">✏ Ajout manuel</div>
+          <div class="card-title">+ Ajout manuel</div>
           <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center">
             <input class="input-field" id="manual-hours"   type="number" min="0" placeholder="h" style="width:58px">
             <input class="input-field" id="manual-mins"    type="number" min="0" max="59" placeholder="min" style="width:66px">
@@ -1515,17 +1842,20 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
         </div>
 
         <div class="card col-2">
-          <div class="card-title">Journal des heures</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+            <div class="card-title" style="margin:0">Journal des heures</div>
+            <button class="btn btn-muted" style="font-size:.62rem;padding:3px 9px;opacity:.7" onclick="consolidatePomLogs()" title="Fusionner les Pomodoros du même sujet">⊞ Consolider</button>
+          </div>
           <div class="log-list" id="log-list"></div>
           <div class="stats-row">
             <div class="stat-box"><span class="stat-val" id="stat-week">0h</span><span class="stat-label">Semaine</span></div>
             <div class="stat-box"><span class="stat-val" id="stat-avg">0h</span><span class="stat-label">Moy./jour</span></div>
-            <div class="stat-box"><span class="stat-val" id="stat-streak">0</span><span class="stat-label">🔥 Streak</span></div>
+            <div class="stat-box"><span class="stat-val" id="stat-streak">0</span><span class="stat-label">🔥 Série</span></div>
           </div>
         </div>
 
         <div class="card teal col-full">
-          <div class="card-title">Minuteurs personnalisés</div>
+          <div class="card-title">⏱ Minuteurs personnalisés</div>
           <div id="timer-list"></div>
           <div style="display:flex;gap:7px;margin-top:14px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--border)">
             <input class="input-field" id="new-timer-name"     placeholder="Nom du minuteur" style="flex:2;min-width:110px">
@@ -1738,26 +2068,31 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
         </div>
 
         <div class="grid-5 kpi-row-outter">
-          <div class="card" style="text-align:center;padding:18px 12px">
-            <div class="card-title" style="justify-content:center;margin-bottom:8px">Total</div>
+          <div class="card" style="text-align:center;padding:20px 12px;position:relative;overflow:hidden">
+            <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--amber),transparent)"></div>
+            <div class="card-title" style="margin-bottom:10px;justify-content:center">Total</div>
             <div class="stat-val" id="kpi-total" style="font-size:2rem">0h</div>
           </div>
-          <div class="card" style="text-align:center;padding:18px 12px">
-            <div class="card-title" style="justify-content:center;margin-bottom:8px">Moy./jour</div>
+          <div class="card" style="text-align:center;padding:20px 12px;position:relative;overflow:hidden">
+            <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--teal),transparent)"></div>
+            <div class="card-title" style="margin-bottom:10px;justify-content:center">Moy./jour</div>
             <div class="stat-val" id="kpi-avg" style="font-size:2rem;color:var(--teal)">0h</div>
           </div>
-          <div class="card" style="text-align:center;padding:18px 12px">
-            <div class="card-title" style="justify-content:center;margin-bottom:8px">Meilleur</div>
+          <div class="card" style="text-align:center;padding:20px 12px;position:relative;overflow:hidden">
+            <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--sage),transparent)"></div>
+            <div class="card-title" style="margin-bottom:10px;justify-content:center">Meilleur jour</div>
             <div class="stat-val" id="kpi-best" style="font-size:2rem;color:var(--sage)">0h</div>
           </div>
-          <div class="card" style="text-align:center;padding:18px 12px">
-            <div class="card-title" style="justify-content:center;margin-bottom:8px">Jours actifs</div>
+          <div class="card" style="text-align:center;padding:20px 12px;position:relative;overflow:hidden">
+            <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--lav),transparent)"></div>
+            <div class="card-title" style="margin-bottom:10px;justify-content:center">Jours actifs</div>
             <div class="stat-val" id="kpi-days" style="font-size:2rem;color:var(--lav)">0</div>
           </div>
-          <div class="card" style="text-align:center;padding:18px 12px">
-            <div class="card-title" style="justify-content:center;margin-bottom:8px">🔥 Streak</div>
+          <div class="card" style="text-align:center;padding:20px 12px;position:relative;overflow:hidden">
+            <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--amber),transparent)"></div>
+            <div class="card-title" style="margin-bottom:10px;justify-content:center">🔥 Série</div>
             <div class="stat-val" id="kpi-streak-stat" style="font-size:2rem;color:var(--amber)">0</div>
-            <div style="font-family:var(--mono);font-size:.58rem;color:var(--text3);margin-top:3px" id="kpi-streak-label">jours</div>
+            <div style="font-family:var(--mono);font-size:.58rem;color:var(--text3);margin-top:4px" id="kpi-streak-label">jours</div>
           </div>
         </div>
 
@@ -1796,6 +2131,65 @@ input[type="range"].vol-slider::-webkit-slider-thumb {
 </div><div id="toast"></div>
 
 <script>
+/* --------------------------------------------------
+   SOUND - Alarm (compatible macOS/Safari/WebKit)
+/* ------------------------------ */
+/* --------------------------------------------------
+   AUDIO ENGINE — compatible macOS / Safari / Chrome
+   Un seul AudioContext global, débloqué dès le premier
+   clic utilisateur (requis par tous les navigateurs modernes)
+/* ------------------------------ */
+let _sharedAudioCtx = null;
+
+// Appelé sur chaque interaction utilisateur pour débloquer l'audio
+function _ensureAudioCtx(){
+  if(!_sharedAudioCtx){
+    _sharedAudioCtx = new(window.AudioContext||window.webkitAudioContext)();
+  }
+  if(_sharedAudioCtx.state === 'suspended'){
+    _sharedAudioCtx.resume();
+  }
+  return _sharedAudioCtx;
+}
+
+// Débloquer l'audio dès le premier clic n'importe où dans la page
+document.addEventListener('click', ()=>{ try{ _ensureAudioCtx(); }catch(e){} }, { once: false, passive: true });
+document.addEventListener('keydown', ()=>{ try{ _ensureAudioCtx(); }catch(e){} }, { once: false, passive: true });
+
+function _playNote(ctx, freq, delay, vol, dur){
+  try{
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    const t0 = ctx.currentTime + delay;
+    osc.frequency.setValueAtTime(freq, t0);
+    // Rampe linéaire montante puis descendante (pas d'exponential depuis 0 — crash WebKit)
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.linearRampToValueAtTime(vol, t0 + 0.07);
+    gain.gain.setValueAtTime(vol, t0 + dur * 0.55);
+    gain.gain.linearRampToValueAtTime(0.0001, t0 + dur);
+    osc.start(t0);
+    osc.stop(t0 + dur + 0.05);
+  }catch(e){ console.warn('_playNote error:', e); }
+}
+
+function playAlarm(){
+  try{
+    const ctx = _ensureAudioCtx();
+    // Accord Do majeur ascendant — son de fin de session
+    [
+      {freq:523.25, delay:0,    vol:0.20, dur:1.8},
+      {freq:659.25, delay:0.42, vol:0.20, dur:1.6},
+      {freq:783.99, delay:0.84, vol:0.20, dur:1.5},
+      {freq:1046.5, delay:1.26, vol:0.24, dur:2.2},
+    ].forEach(n => _playNote(ctx, n.freq, n.delay, n.vol, n.dur));
+    // Basse douce en fond
+    _playNote(ctx, 261.63, 0, 0.08, 3.4);
+  }catch(e){ console.warn('playAlarm error:', e); }
+}
+
 /* --------------------------------------------------
    FIREBASE
 /* ------------------------------ */
@@ -1933,16 +2327,21 @@ async function loadFromFirestore(){
     const doc = await DOC_REF.get();
     if(doc.exists){
       const data = doc.data();
-      // Merger : prendre Firebase sauf si local a plus d'entrées récentes
+      // Merger : choisir la source la plus récente en comparant startTime ou date
       const fbLog = data.log || [];
       const localLog = state.log || [];
-      // Utiliser le log qui a la dernière entrée la plus récente
-      const fbLatest = fbLog.length ? (fbLog[0].date||'') : '';
-      const localLatest = localLog.length ? (localLog[0].date||'') : '';
-      if(fbLatest >= localLatest && fbLog.length >= localLog.length){
+      // Trouver le timestamp le plus récent dans chaque log
+      const latestTs = (log) => log.reduce((best, e) => {
+        const ts = e.startTime || new Date(e.date+'T23:59:59').getTime();
+        return ts > best ? ts : best;
+      }, 0);
+      const fbTs    = latestTs(fbLog);
+      const localTs = latestTs(localLog);
+      // Prendre Firebase si plus récent ou si même timestamp mais plus d'entrées
+      if(fbTs > localTs || (fbTs === localTs && fbLog.length >= localLog.length)){
         state = {...state, ...data};
       } else {
-        // Garder le log local mais prendre le reste de Firebase
+        // Log local plus récent — garder le log local, prendre le reste de Firebase
         const savedLog = state.log;
         state = {...state, ...data, log: savedLog};
       }
@@ -2525,7 +2924,7 @@ function renderPomCycles(){
 // Son doux de pause (descente) — compatible macOS/Safari
 function playBreakSound(){
   try{
-    const ctx=_makeAudioCtx();
+    const ctx = _ensureAudioCtx();
     [[523,0,.15,1.1],[659,.28,.14,0.9],[523,.56,.12,1.0],[392,.84,.10,1.3]].forEach(([freq,delay,vol,dur])=>{
       _playNote(ctx,freq,delay,vol,dur);
     });
@@ -2540,14 +2939,11 @@ setTimeout(pomRestoreAfterCrash, 800);
 /* --------------------------------------------------
    SONS AMBIANTS
 /* ------------------------------ */
-let audioCtx=null, soundSource=null, soundGain=null, currentSound=null;
+let audioCtx = null; // Partagé avec les sons ambiants — déclaré avant initAudio
+let soundSource=null, soundGain=null, currentSound=null;
 function initAudio(){
-  if(!audioCtx){
-    audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-    if(audioCtx.state==='suspended') audioCtx.resume();
-  } else if(audioCtx.state==='suspended'){
-    audioCtx.resume();
-  }
+  // Réutiliser le contexte partagé pour les sons ambiants aussi
+  audioCtx = _ensureAudioCtx();
 }
 function stopSound(){
   if(soundSource){try{soundSource.stop();}catch(e){}soundSource=null;}
@@ -2680,50 +3076,6 @@ function renderSubjectGoals(){
       <button class="icon-btn del" onclick="deleteSubjectGoal('${g.id}')">✕</button>
     </div>`;
   }).join('');
-}
-
-/* --------------------------------------------------
-   SOUND - Alarm (compatible macOS/Safari/WebKit)
-/* ------------------------------ */
-function _makeAudioCtx(){
-  const ctx=new(window.AudioContext||window.webkitAudioContext)();
-  // Safari suspend le contexte par défaut — le reprendre immédiatement
-  if(ctx.state==='suspended') ctx.resume();
-  return ctx;
-}
-function _playNote(ctx,freq,delay,vol,dur){
-  try{
-    const osc=ctx.createOscillator();
-    const gain=ctx.createGain();
-    // Ajouter un compresseur pour éviter les clipping sur macOS
-    osc.connect(gain); gain.connect(ctx.destination);
-    osc.type='sine';
-    osc.frequency.setValueAtTime(freq, ctx.currentTime+delay);
-    // IMPORTANT : éviter exponentialRamp depuis 0 (crash WebKit)
-    // On utilise uniquement setValueAtTime + linearRampToValueAtTime
-    const t0=ctx.currentTime+delay;
-    gain.gain.setValueAtTime(0.0001, t0);
-    gain.gain.linearRampToValueAtTime(vol, t0+0.06);
-    gain.gain.setValueAtTime(vol, t0+dur*0.6);
-    gain.gain.linearRampToValueAtTime(0.0001, t0+dur);
-    osc.start(t0);
-    osc.stop(t0+dur+0.05);
-  }catch(e){ console.warn('Sound error:',e); }
-}
-function playAlarm(){
-  try{
-    const ctx=_makeAudioCtx();
-    // Accord Do majeur ascendant — son de victoire/accomplissement
-    const notes=[
-      {freq:523.25,delay:0,    vol:0.18,dur:1.8},
-      {freq:659.25,delay:0.42, vol:0.18,dur:1.6},
-      {freq:783.99,delay:0.84, vol:0.18,dur:1.5},
-      {freq:1046.5, delay:1.26,vol:0.22,dur:2.2},
-    ];
-    notes.forEach(n=>_playNote(ctx,n.freq,n.delay,n.vol,n.dur));
-    // Harmonique douce en fond
-    _playNote(ctx,261.63,0,0.07,3.2);
-  }catch(e){ console.warn('playAlarm error:',e); }
 }
 
 /* --------------------------------------------------
@@ -2903,7 +3255,7 @@ function renderLog(){
     const h=Math.floor(e.seconds/3600),m=Math.floor((e.seconds%3600)/60),s=e.seconds%60;
     const bp=Math.min(100,Math.round(e.seconds/gs*100));
     const ts=h>0?`${h}h ${m>0?m+'min':''}`:`${m}min${h===0&&m===0?' '+s+'s':''}`;
-    const isPom=e.note&&e.note.includes('🍅');
+    const isPom=e.isPom||!!(e.note&&e.note.includes('🍅'));
 
     // Heure de début et fin
     let timeStr='';
@@ -2941,7 +3293,7 @@ function consolidatePomLogs(){
   const byKey={};
   const toRemove=[];
   state.log.forEach((e,i)=>{
-    if(!e.note||!e.note.includes('🍅')) return;
+    if(!e.isPom && !(e.note&&e.note.includes('🍅'))) return;
     const key=e.date+'|'+(e.subject||'');
     if(!byKey[key]) byKey[key]={total:0,indices:[],startTime:null,subject:e.subject,date:e.date};
     byKey[key].total+=e.seconds;
@@ -3192,8 +3544,9 @@ function importICS(event){
     try{
       const text=e.target.result;const events=parseICS(text);
       if(!events.length){showToast('⚠ Aucun événement','red');return;}
-      const eid=new Set(state.events.map(ev=>ev.uid||''));
-      const ne=events.filter(ev=>!eid.has(ev.uid||Math.random()));
+      const eid=new Set(state.events.filter(ev=>ev.uid).map(ev=>ev.uid));
+      // Garder les events qui n'ont pas de UID connu dans l'état actuel
+      const ne=events.filter(ev=>!ev.uid || !eid.has(ev.uid));
       state.events=[...state.events,...ne];
       save();renderCalendar();showToast(`✓ ${ne.length} événement(s) importé(s)`);
     }catch{showToast('⚠ Fichier invalide','red');}
@@ -3560,6 +3913,9 @@ window.addEventListener('beforeunload', ()=>{
     }
   });
   saveLocal();
+  // Supprimer pom_crash pour éviter le double-log au rechargement
+  // (le temps vient d'être sauvegardé dans state.log ci-dessus)
+  localStorage.removeItem('pom_crash');
 });
 
 /* --------------------------------------------------
